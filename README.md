@@ -4,7 +4,7 @@ A standalone Fabric and NeoForge mod for Minecraft 26.1 and 26.3, built with Jav
 
 ## Build and test
 
-Stonecutter builds four targets from this checkout, with 26.1 NeoForge as the editable default. Gameplay and UI live in `src/main`. Loader entrypoints, event adapters, and loader-specific resources live in `src/fabric` and `src/neoforge`. ModDevGradle builds the NeoForge targets and Loom builds the Fabric targets.
+Stonecutter builds four targets from this checkout, with 26.1 NeoForge as the editable default. Gameplay and UI live in `src/main`. Loader entrypoints, event adapters, and loader-specific resources live in `src/fabric` and `src/neoforge`. ModDevGradle builds the NeoForge targets and Loom builds the Fabric targets. Stonecutter evaluates loader conditions such as `//? if neoforge {` and Minecraft version conditions such as `//? if <26.3 {` before Java compilation. For example, both loaders use the same mining-speed calculation, with a NeoForge break-speed event and a Fabric mixin calling it.
 
 ```sh
 ./gradlew :26.1-fabric:build :26.1-fabric:runGameTestServer
@@ -183,11 +183,11 @@ The `MULTI_TOOL_ABILITY` component enables tool modifications on right-click:
 ```java
 // In item registration
 ItemStack stack = new ItemStack(myItem);
-stack.set(HammerRegistry.MULTI_BLOCK_MINING, MiningModeData.DEFAULT);
-stack.set(HammerRegistry.TOOL_CONFIG, ToolConfig.DEFAULT);
-stack.set(HammerRegistry.LIGHTNING_ABILITY, Unit.INSTANCE);
-stack.set(HammerRegistry.RIGHT_CLICK_ACTION, new RightClickAction(Identifier.fromNamespaceAndPath("florafauna", "throwable_ability")));
-stack.set(HammerRegistry.MULTI_TOOL_ABILITY, MultiToolAbilityData.DEFAULT);
+stack.set(HammerRegistry.MULTI_BLOCK_MINING.get(), MiningModeData.DEFAULT);
+stack.set(HammerRegistry.TOOL_CONFIG.get(), ToolConfig.DEFAULT);
+stack.set(HammerRegistry.LIGHTNING_ABILITY.get(), Unit.INSTANCE);
+stack.set(HammerRegistry.RIGHT_CLICK_ACTION.get(), new RightClickAction(Identifier.fromNamespaceAndPath("florafauna", "throwable_ability")));
+stack.set(HammerRegistry.MULTI_TOOL_ABILITY.get(), MultiToolAbilityData.DEFAULT);
 ```
 
 ## Event Handlers
