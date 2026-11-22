@@ -45,12 +45,15 @@ public final class HammerPlaytest {
     private static boolean observingCracks;
     private static final Set<BlockPos> cracks = new HashSet<>();
 
-    // LevelRenderer resets this state at the end of each frame, before the playtest's next client tick.
-    static void captureOutline(net.minecraft.client.renderer.state.level.LevelRenderState state, BlockPos hammerOutline) {
+    // 26.3 consumes these states when it submits the breaking animation for rendering.
+    static void captureCracks(net.minecraft.client.renderer.state.level.LevelRenderState state) {
         if (observingCracks) {
             cracks.clear();
             state.blockBreakingRenderStates.forEach(crack -> cracks.add(crack.blockPos()));
         }
+    }
+
+    static void captureOutline(BlockPos hammerOutline) {
         lastCustomOutline = hammerOutline;
     }
 

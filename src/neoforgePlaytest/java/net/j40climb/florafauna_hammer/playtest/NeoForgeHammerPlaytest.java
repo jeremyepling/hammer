@@ -18,6 +18,7 @@ public final class NeoForgeHammerPlaytest {
     public static void captureOutline(ExtractLevelRenderStateEvent event) {
         var state = event.getRenderState();
         var outline = state.blockOutlineRenderState;
-        HammerPlaytest.captureOutline(state, outline != null && !outline.customRenderers().isEmpty() ? outline.pos() : null);
+        HammerPlaytest.captureCracks(state);
+        HammerPlaytest.captureOutline(outline != null && !outline.customRenderers().isEmpty() ? outline.pos() : null);
     }
 }

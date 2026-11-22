@@ -9,7 +9,7 @@ public final class FabricHammerPlaytest implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> Playtest.tick());
-        LevelRenderEvents.END_MAIN.register(context ->
-                HammerPlaytest.captureOutline(context.levelState(), MultiBlockOutlineRenderer.lastRenderedTarget()));
+        LevelRenderEvents.END_EXTRACTION.register(context -> HammerPlaytest.captureCracks(context.levelState()));
+        LevelRenderEvents.END_MAIN.register(context -> HammerPlaytest.captureOutline(MultiBlockOutlineRenderer.lastRenderedTarget()));
     }
 }
