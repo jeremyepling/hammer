@@ -57,7 +57,7 @@ final class HammerPowerPlaytest {
             p.teleportTo(level, 0.5, 201, 0.5, Set.of(), 0f, 0f, true);
         });
         t.awaitClient("Hold a fresh Hammer facing the scanner wall", mc ->
-                mc.player.getMainHandItem().is(HammerRegistry.HAMMER) && mc.player.onGround()
+                mc.player.getMainHandItem().is(HammerRegistry.HAMMER.get()) && mc.player.onGround()
                         && mc.hitResult instanceof BlockHitResult hit && hit.getBlockPos().equals(CHEST));
         t.client("Set the first-person view", mc -> {
             mc.options.setCameraType(CameraType.FIRST_PERSON);
@@ -104,8 +104,8 @@ final class HammerPowerPlaytest {
             target[0].setNoAi(true);
             p.level().addFreshEntity(target[0]);
             var tempest = HammerStage.TEMPEST.createStack();
-            tempest.set(HammerRegistry.HAMMER_CHARGE, 64);
-            tempest.set(HammerRegistry.HAMMER_ACTION, HammerAction.SCAN);
+            tempest.set(HammerRegistry.HAMMER_CHARGE.get(), 64);
+            tempest.set(HammerRegistry.HAMMER_ACTION.get(), HammerAction.SCAN);
             p.setItemInHand(InteractionHand.MAIN_HAND, tempest);
         });
         t.client("Frame the approaching shockwave and jump from the scanner platform", mc -> {
@@ -120,7 +120,7 @@ final class HammerPowerPlaytest {
             return true;
         });
         t.awaitServer("Land the slam and damage the nearby hostile", p -> target[0].getHealth() < target[0].getMaxHealth()
-                && !p.hasData(HammerRegistry.PENDING_SLAM) && HammerItem.charge(p.getMainHandItem()) >= 52
+                && HammerRegistry.pendingSlam(p) == null && HammerItem.charge(p.getMainHandItem()) >= 52
                 && HammerItem.charge(p.getMainHandItem()) <= 54 && p.level().getBlockState(p.getOnPos()).is(SCANNER_WALL));
         t.screenshot("kinetic-impact");
         t.server("Build a ranged lightning target away from the player", p -> {
@@ -130,12 +130,12 @@ final class HammerPowerPlaytest {
         t.client("Restore first person for the lightning discharge", mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
         t.awaitClient("Aim down the lightning lane", mc -> mc.player.getYRot() == -90f
                 && mc.level.getBlockState(new BlockPos(8, 202, 0)).is(Blocks.OBSIDIAN));
-        t.client("Activate lightning with the mapped key", mc -> KeyMapping.click(ClientSetup.SUMMON_LIGHTNING_KEY.get().getKey()));
+        t.client("Activate lightning with the mapped key", mc -> KeyMapping.click(ClientSetup.boundKey(ClientSetup.SUMMON_LIGHTNING_KEY.get())));
         t.awaitClient("Observe a real bolt in the target lane", mc -> !mc.level.getEntitiesOfClass(
                 LightningBolt.class, mc.player.getBoundingBox().inflate(12)).isEmpty());
         t.screenshot("tempest-lightning-discharge-first");
         t.server("Prepare a full Tempest Hammer for a charged ore strike", p ->
-                p.getMainHandItem().set(HammerRegistry.HAMMER_CHARGE, HammerStage.TEMPEST.capacity()));
+                p.getMainHandItem().set(HammerRegistry.HAMMER_CHARGE.get(), HammerStage.TEMPEST.capacity()));
         ChargedHammerPlaytest.steps(t);
     }
 

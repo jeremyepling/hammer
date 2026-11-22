@@ -17,15 +17,8 @@ import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.InputEvent;
 import com.mojang.blaze3d.platform.InputConstants;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
-@EventBusSubscriber(modid = HammerMod.MOD_ID, value = Dist.CLIENT)
 public class KeyInputEvents {
 
     private static int throwKeyPlayerId = Integer.MIN_VALUE;
@@ -45,27 +38,27 @@ public class KeyInputEvents {
         /*if (holdingThrow && (mc.gui.screen() != null || player.getInventory().getSelectedSlot() != throwSlot
         *///?}
                 || !held.is(HammerRegistry.HAMMER.get()))) {
-            ClientPacketDistributor.sendToServer(new ChargedThrowPayload(ChargedThrowPayload.CANCEL));
+            ClientSetup.sendToServer(new ChargedThrowPayload(ChargedThrowPayload.CANCEL));
             holdingThrow = false;
         }
         while (key.consumeClick()) {
             if (held.is(HammerRegistry.HAMMER.get())) {
                 //? if <26.3 {
-                if (mc.screen == null && !holdingThrow && held.has(HammerRegistry.THROWABLE_ABILITY)) {
+                if (mc.screen == null && !holdingThrow && held.has(HammerRegistry.THROWABLE_ABILITY.get())) {
                 //?} else {
-                /*if (mc.gui.screen() == null && !holdingThrow && held.has(HammerRegistry.THROWABLE_ABILITY)) {
+                /*if (mc.gui.screen() == null && !holdingThrow && held.has(HammerRegistry.THROWABLE_ABILITY.get())) {
                 *///?}
                     holdingThrow = true;
                     throwSlot = player.getInventory().getSelectedSlot();
-                    ClientPacketDistributor.sendToServer(new ChargedThrowPayload(ChargedThrowPayload.PRESS));
+                    ClientSetup.sendToServer(new ChargedThrowPayload(ChargedThrowPayload.PRESS));
                 }
-            } else if (held.has(HammerRegistry.THROWABLE_ABILITY)) {
+            } else if (held.has(HammerRegistry.THROWABLE_ABILITY.get())) {
                 //? if <26.3 {
                 player.swing(InteractionHand.MAIN_HAND);
                 //?} else {
                 /*player.swing(InteractionHand.MAIN_HAND, held.getAttackAnimation(), false);
                 *///?}
-                ClientPacketDistributor.sendToServer(new ThrowItemPayload(true));
+                ClientSetup.sendToServer(new ThrowItemPayload(true));
             }
         }
         if (holdingThrow && !key.isDown()) {
@@ -75,7 +68,7 @@ public class KeyInputEvents {
             //?} else {
             /*player.swing(InteractionHand.MAIN_HAND, held.getAttackAnimation(), false);
             *///?}
-            ClientPacketDistributor.sendToServer(new ChargedThrowPayload(ChargedThrowPayload.RELEASE));
+            ClientSetup.sendToServer(new ChargedThrowPayload(ChargedThrowPayload.RELEASE));
         }
     }
 
@@ -88,16 +81,12 @@ public class KeyInputEvents {
 
     // Observe physical edges before another input can arrive in the same tick. Tick polling also
     // supports injected key mappings and fires deadlines while the keyboard is idle.
-    @SubscribeEvent
-    public static void onControlKey(InputEvent.Key event) {
-        if (ClientSetup.CYCLE_MINING_MODE_KEY.get().matches(event.getKeyEvent())) controlEdge(event.getAction());
+    public static void onControlKey(net.minecraft.client.input.KeyEvent event, int action) {
+        if (ClientSetup.CYCLE_MINING_MODE_KEY.get().matches(event)) controlEdge(action);
     }
 
-    @SubscribeEvent
-    public static void onControlMouse(InputEvent.MouseButton.Post event) {
-        if (ClientSetup.CYCLE_MINING_MODE_KEY.get().getKey().equals(InputConstants.Type.MOUSE.getOrCreate(event.getButton()))) {
-            controlEdge(event.getAction());
-        }
+    public static void onControlMouse(int button, int action) {
+        if (ClientSetup.boundKey(ClientSetup.CYCLE_MINING_MODE_KEY.get()).equals(InputConstants.Type.MOUSE.getOrCreate(button))) controlEdge(action);
     }
 
     private static void controlEdge(int action) {
@@ -151,8 +140,8 @@ public class KeyInputEvents {
 
         int slot = player == null ? -1 : player.getInventory().getSelectedSlot();
         var held = player == null ? ItemStack.EMPTY : player.getMainHandItem();
-        boolean usable = held.has(HammerRegistry.MULTI_BLOCK_MINING) || held.has(HammerRegistry.HAMMER_ACTION)
-                || held.has(HammerRegistry.TOOL_CONFIG);
+        boolean usable = held.has(HammerRegistry.MULTI_BLOCK_MINING.get()) || held.has(HammerRegistry.HAMMER_ACTION.get())
+                || held.has(HammerRegistry.TOOL_CONFIG.get());
         //? if <26.3 {
         if (player != gesturePlayer || slot != gestureSlot || mc.screen != null || !usable) {
         //?} else {
@@ -193,8 +182,8 @@ public class KeyInputEvents {
     private static void dispatch(Minecraft mc, HammerControlGesture.Action action) {
         switch (action) {
             case NONE -> { }
-            case CYCLE -> ClientPacketDistributor.sendToServer(CycleMiningModePayload.INSTANCE);
-            case SINGLE -> ClientPacketDistributor.sendToServer(new SelectMiningModePayload(gestureSlot, MiningShape.SINGLE, false));
+            case CYCLE -> ClientSetup.sendToServer(CycleMiningModePayload.INSTANCE);
+            case SINGLE -> ClientSetup.sendToServer(new SelectMiningModePayload(gestureSlot, MiningShape.SINGLE, false));
             case MENU -> {
                 menuHold = true;
                 //? if <26.3 {
@@ -206,8 +195,7 @@ public class KeyInputEvents {
         }
     }
 
-    @SubscribeEvent
-    public static void onClientTick(ClientTickEvent.Post event) {
+    public static void onClientTick() {
         Minecraft mc = Minecraft.getInstance();
         updateControl(mc);
         Player player = mc.player;
@@ -220,13 +208,13 @@ public class KeyInputEvents {
             // Component-based check - works with any item that has LIGHTNING_ABILITY
             if (HammerAction.LIGHTNING.availableOn(itemStack)) {
                 BlockPos targetPos = SpawnLightningPayload.targetFromView(player);
-                ClientPacketDistributor.sendToServer(new SpawnLightningPayload(targetPos));
+                ClientSetup.sendToServer(new SpawnLightningPayload(targetPos));
             }
         }
         while (ClientSetup.TELEPORT_SURFACE_KEY.get().consumeClick()) {
             // Component-based check - works with any item that has TELEPORT_SURFACE_ABILITY
             if (HammerAction.TELEPORT.availableOn(itemStack)) {
-                ClientPacketDistributor.sendToServer(TeleportToSurfacePayload.INSTANCE);
+                ClientSetup.sendToServer(TeleportToSurfacePayload.INSTANCE);
             }
         }
         updateThrowKey(mc, itemStack);

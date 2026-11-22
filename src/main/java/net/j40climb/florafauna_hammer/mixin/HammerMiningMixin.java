@@ -45,7 +45,7 @@ abstract class HammerMiningMixin {
         // Consume this player's hit once. Recursive neighbor breaks have no pending hit.
         florafauna$target = null;
         var tool = player.getMainHandItem();
-        var mode = tool.get(HammerRegistry.MULTI_BLOCK_MINING);
+        var mode = tool.get(HammerRegistry.MULTI_BLOCK_MINING.get());
         if (mode == null || mode.shape() == MiningShape.SINGLE) return original.call(pos);
         var level = player.level();
         var before = level.getBlockState(pos);

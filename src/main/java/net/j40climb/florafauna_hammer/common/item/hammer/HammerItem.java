@@ -31,7 +31,7 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.block.state.BlockState;
-//? if <26.3 {
+//? if neoforge && <26.3 {
 import net.neoforged.neoforge.common.ItemAbilities;
 import net.neoforged.neoforge.common.ItemAbility;
 //?}
@@ -73,20 +73,20 @@ public class HammerItem extends Item {
     public HammerItem(Properties properties) {
         super(removeEnchantable(properties)
                 // Tool ability components (composable - these enable the abilities)
-                .component(HammerRegistry.MULTI_BLOCK_MINING, MiningModeData.DEFAULT)
-                .component(HammerRegistry.TOOL_CONFIG, ToolConfig.DEFAULT)
+                .component(HammerRegistry.MULTI_BLOCK_MINING.get(), MiningModeData.DEFAULT)
+                .component(HammerRegistry.TOOL_CONFIG.get(), ToolConfig.DEFAULT)
                 .delayedComponent(DataComponents.ENCHANTMENTS, registries -> {
                     var enchantments = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
                     enchantments.set(registries.getOrThrow(Enchantments.FORTUNE), 3);
                     return enchantments.toImmutable();
                 })
-                .component(HammerRegistry.LIGHTNING_ABILITY, Unit.INSTANCE)
-                .component(HammerRegistry.TELEPORT_SURFACE_ABILITY, Unit.INSTANCE)
-                .component(HammerRegistry.HAMMER_STAGE, HammerStage.FORGED)
-                .component(HammerRegistry.THROWABLE_ABILITY, ThrowableAbilityData.DEFAULT)
-                .component(HammerRegistry.RIGHT_CLICK_ACTION, new RightClickAction(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "throwable_ability")))
-                .component(HammerRegistry.MULTI_TOOL_ABILITY, MultiToolAbilityData.DEFAULT)
-                .component(HammerRegistry.HAMMER_ACTION, HammerAction.AUTO)
+                .component(HammerRegistry.LIGHTNING_ABILITY.get(), Unit.INSTANCE)
+                .component(HammerRegistry.TELEPORT_SURFACE_ABILITY.get(), Unit.INSTANCE)
+                .component(HammerRegistry.HAMMER_STAGE.get(), HammerStage.FORGED)
+                .component(HammerRegistry.THROWABLE_ABILITY.get(), ThrowableAbilityData.DEFAULT)
+                .component(HammerRegistry.RIGHT_CLICK_ACTION.get(), new RightClickAction(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "throwable_ability")))
+                .component(HammerRegistry.MULTI_TOOL_ABILITY.get(), MultiToolAbilityData.DEFAULT)
+                .component(HammerRegistry.HAMMER_ACTION.get(), HammerAction.AUTO)
                 .component(DataComponents.UNBREAKABLE, Unit.INSTANCE)
         );
     }
@@ -94,7 +94,7 @@ public class HammerItem extends Item {
     @Override
     public InteractionResult useOn(UseOnContext context) {
         if (context.getPlayer() == null || !context.getPlayer().onGround()
-                || context.getItemInHand().get(HammerRegistry.HAMMER_ACTION) != HammerAction.SCAN
+                || context.getItemInHand().get(HammerRegistry.HAMMER_ACTION.get()) != HammerAction.SCAN
                 || !HammerAction.SCAN.availableOn(context.getItemInHand())) {
             return super.useOn(context);
         }
@@ -122,12 +122,21 @@ public class HammerItem extends Item {
      * @param enchantment the enchantment being checked
      * @return false to reject all enchantments
      */
+    //? if neoforge {
     @Override
     public boolean supportsEnchantment(ItemStack stack, Holder<Enchantment> enchantment) {
         return false;
     }
 
-    //? if <26.3 {
+    //?} else {
+    /*@Override
+    public boolean canBeEnchantedWith(ItemStack stack, Holder<Enchantment> enchantment,
+                                      net.fabricmc.fabric.api.item.v1.EnchantingContext context) {
+        return false;
+    }
+    *///?}
+
+    //? if neoforge && <26.3 {
     /**
      * Declares which tool actions this item can perform based on its MULTI_TOOL_ABILITY component.
      * This is required for getToolModifiedState to work properly.
@@ -138,7 +147,7 @@ public class HammerItem extends Item {
      */
     @Override
     public boolean canPerformAction(ItemInstance stack, ItemAbility itemAbility) {
-        MultiToolAbilityData multiTool = stack.get(HammerRegistry.MULTI_TOOL_ABILITY);
+        MultiToolAbilityData multiTool = stack.get(HammerRegistry.MULTI_TOOL_ABILITY.get());
         if (multiTool == null) {
             return false;
         }
@@ -184,7 +193,7 @@ public class HammerItem extends Item {
         HammerStage stage = HammerStage.of(itemStack);
         MiningModeData miningModeData = MiningModeData.effective(itemStack);
         tooltipComponents.accept(miningModeData.modeDescription());
-        ToolConfig toolConfig = itemStack.getOrDefault(HammerRegistry.TOOL_CONFIG, ToolConfig.DEFAULT);
+        ToolConfig toolConfig = itemStack.getOrDefault(HammerRegistry.TOOL_CONFIG.get(), ToolConfig.DEFAULT);
         tooltipComponents.accept(toolConfig.withMiningSpeed(toolConfig.effectiveSpeed(stage)).speedDescription());
         if (stage.capacity() > 0) {
             tooltipComponents.accept(Component.translatable("tooltip.florafauna.hammer.charge", charge(itemStack), stage.capacity()));
@@ -200,19 +209,27 @@ public class HammerItem extends Item {
 
     public static int charge(ItemStack stack) {
         int capacity = HammerStage.of(stack).capacity();
-        return Math.clamp(stack.getOrDefault(HammerRegistry.HAMMER_CHARGE, capacity), 0, capacity);
+        return Math.clamp(stack.getOrDefault(HammerRegistry.HAMMER_CHARGE.get(), capacity), 0, capacity);
     }
 
+    //? if neoforge {
     @Override
     public boolean shouldCauseBlockBreakReset(ItemStack oldStack, ItemStack newStack) {
         return !ItemStack.matchesIgnoringComponents(oldStack, newStack, type -> type == HammerRegistry.HAMMER_CHARGE.get());
     }
 
+    //?} else {
+    /*@Override
+    public boolean allowContinuingBlockBreaking(Player player, ItemStack oldStack, ItemStack newStack) {
+        return ItemStack.matchesIgnoringComponents(oldStack, newStack, type -> type == HammerRegistry.HAMMER_CHARGE.get());
+    }
+    *///?}
+
     @Override
     public void inventoryTick(ItemStack stack, ServerLevel level, Entity owner, @Nullable EquipmentSlot slot) {
         int capacity = HammerStage.of(stack).capacity();
         if (capacity == 0) {
-            if (stack.has(HammerRegistry.HAMMER_CHARGE)) stack.remove(HammerRegistry.HAMMER_CHARGE);
+            if (stack.has(HammerRegistry.HAMMER_CHARGE.get())) stack.remove(HammerRegistry.HAMMER_CHARGE.get());
             return;
         }
         int charge = charge(stack);
@@ -220,7 +237,7 @@ public class HammerItem extends Item {
                 && owner.tickCount % 20 == 0 && charge < capacity) {
             charge++;
         }
-        if (stack.getOrDefault(HammerRegistry.HAMMER_CHARGE, -1) != charge) stack.set(HammerRegistry.HAMMER_CHARGE, charge);
+        if (stack.getOrDefault(HammerRegistry.HAMMER_CHARGE.get(), -1) != charge) stack.set(HammerRegistry.HAMMER_CHARGE.get(), charge);
     }
 
     @Override public boolean isBarVisible(ItemStack stack) { return charge(stack) < HammerStage.of(stack).capacity(); }

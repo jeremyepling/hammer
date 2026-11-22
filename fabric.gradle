@@ -1,0 +1,58 @@
+plugins {
+    id 'java-library'
+    id 'net.fabricmc.fabric-loom' version '1.16.3'
+}
+
+ext.loader = 'fabric'
+apply from: rootProject.file('gradle/shared.gradle')
+
+repositories { maven { url = 'https://maven.fabricmc.net/' } }
+def fabricLoader = '0.19.5'
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${fabricLoader}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+}
+
+def playtestId = providers.gradleProperty('playtestId').orNull
+def playtestPhase = providers.gradleProperty('playtestPhase').orNull
+if (playtestId && (!(playtestId ==~ /[0-9a-f]{32}/) || !(playtestPhase in ['1', '2']))) {
+    throw new GradleException('Use scripts/test_hammer.ps1 to prepare an isolated client playtest.')
+}
+
+loom {
+    accessWidenerPath = file('target/main/resources/florafauna_hammer.accesswidener')
+    mods {
+        florafauna_hammer { sourceSet sourceSets.main }
+        if (playtestId) {
+            florafauna_hammer_playtest { sourceSet sourceSets.playtest }
+        }
+    }
+    runs {
+        gameTestServer {
+            server()
+            runDir 'run/gameTestServer'
+            vmArg '-Dfabric-api.gametest'
+            vmArg "-Dfabric-api.gametest.filter=${providers.gradleProperty('gameTestFilter').getOrElse('florafauna_hammer:*')}"
+            vmArg "-Dfabric-api.gametest.report-file=${file('build/test-results/gametest.xml')}"
+        }
+        if (playtestId) {
+            worldPlaytest {
+                client()
+                source sourceSets.playtest
+                def directory = rootProject.file(".tmp/world-playtests/${playtestId}/hammer")
+                runDir project.relativePath(directory)
+                programArgs '--width', '960', '--height', '540', '--quickPlaySingleplayer', 'playtest'
+                vmArg "-Dflorafauna.playtest.directory=${directory}"
+                vmArg "-Dflorafauna.playtest.scenario=${providers.gradleProperty('playtestScenario').getOrElse('hammer')}"
+                vmArg "-Dflorafauna.playtest.phase=${playtestPhase}"
+            }
+        }
+    }
+}
+
+processResources {
+    def metadata = [version: project.version, minecraft_version: minecraft_version, fabric_loader_version: fabricLoader, fabric_api_version: fabric_api_version]
+    inputs.properties metadata
+    filesMatching('fabric.mod.json') { expand metadata }
+}

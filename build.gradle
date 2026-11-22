@@ -6,34 +6,8 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.148'
 }
 
-group = 'net.j40climb.florafauna_hammer'
-version = "0.0.1+${minecraft_version}"
-base.archivesName = mod_id
-java.toolchain.languageVersion = JavaLanguageVersion.of(25)
-repositories { mavenCentral() }
-
-// Each target adds its own gameplay classes and assets to the shared sources.
-sourceSets.main.java.srcDir 'target/main/java'
-sourceSets.main.resources.srcDir 'target/main/resources'
-sourceSets.create('playtest') {
-    java.srcDir 'target/playtest/java'
-    compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
-    runtimeClasspath += sourceSets.main.runtimeClasspath
-}
-sourceSets.test {
-    java.srcDir 'target/test/java'
-    compileClasspath += sourceSets.main.compileClasspath
-    runtimeClasspath += sourceSets.main.runtimeClasspath
-}
-dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter:6.1.3'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
-
-tasks.named('jar') { from rootProject.file('LICENSE.txt') }
-tasks.named('test') { useJUnitPlatform() }
-tasks.named('check') { dependsOn 'compilePlaytestJava' }
-tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+ext.loader = 'neoforge'
+apply from: rootProject.file('gradle/shared.gradle')
 
 def playtestId = providers.gradleProperty('playtestId').orNull
 def playtestPhase = providers.gradleProperty('playtestPhase').orNull

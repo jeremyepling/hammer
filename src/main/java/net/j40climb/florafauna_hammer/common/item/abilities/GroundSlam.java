@@ -21,13 +21,17 @@ import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+//? if neoforge {
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+//?}
 
+//? if neoforge {
 @EventBusSubscriber(modid = HammerMod.MOD_ID)
+//?}
 public final class GroundSlam {
     public static final int CHARGE_COST = 12;
     public static final int COOLDOWN_TICKS = 100;
@@ -38,7 +42,6 @@ public final class GroundSlam {
     private static final int TIMEOUT_TICKS = 200;
     private static final double FALL_CUSHION = 2.0;
     private static final int VIOLET = 0xC674FF;
-    private static final String READY_AT = "florafauna_hammer.slam_ready_at";
 
     public record Pending(ItemStack hammer, InteractionHand hand, ResourceKey<Level> dimension, long start) {
         boolean valid(ServerPlayer player) {
@@ -52,14 +55,14 @@ public final class GroundSlam {
 
     public static boolean activate(ServerPlayer player, InteractionHand hand) {
         ItemStack hammer = player.getItemInHand(hand);
-        if (!hammer.is(HammerRegistry.HAMMER) || HammerStage.of(hammer) != HammerStage.TEMPEST || player.onGround()) return false;
+        if (!hammer.is(HammerRegistry.HAMMER.get()) || HammerStage.of(hammer) != HammerStage.TEMPEST || player.onGround()) return false;
         if (!canDescend(player) || touchesGround(player)) {
             player.sendOverlayMessage(Component.translatable("ability.florafauna.slam.invalid"));
             return false;
         }
         ServerLevel level = player.level();
         long now = level.getGameTime();
-        if (player.hasData(HammerRegistry.PENDING_SLAM) || now < player.getPersistentData().getLongOr(READY_AT, 0L)) {
+        if (HammerRegistry.pendingSlam(player) != null || now < SlamCooldown.readyAt(player)) {
             player.sendOverlayMessage(Component.translatable("ability.florafauna.slam.cooldown"));
             return false;
         }
@@ -68,9 +71,9 @@ public final class GroundSlam {
             player.sendOverlayMessage(Component.translatable("ability.florafauna.slam.charge", CHARGE_COST));
             return false;
         }
-        hammer.set(HammerRegistry.HAMMER_CHARGE, charge - CHARGE_COST);
-        player.getPersistentData().putLong(READY_AT, now + COOLDOWN_TICKS);
-        player.setData(HammerRegistry.PENDING_SLAM, new Pending(hammer, hand, level.dimension(), now));
+        hammer.set(HammerRegistry.HAMMER_CHARGE.get(), charge - CHARGE_COST);
+        SlamCooldown.setReadyAt(player, now + COOLDOWN_TICKS);
+        HammerRegistry.setPendingSlam(player, new Pending(hammer, hand, level.dimension(), now));
         Vec3 velocity = player.getDeltaMovement();
         player.setDeltaMovement(velocity.x * 0.35, Math.min(velocity.y, -DOWNWARD_SPEED), velocity.z * 0.35);
         //? if <26.3 {
@@ -98,33 +101,43 @@ public final class GroundSlam {
         return !player.level().noCollision(player, probe);
     }
 
+    //? if neoforge {
     @SubscribeEvent
     public static void onFall(LivingFallEvent event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) return;
-        var pending = player.getExistingDataOrNull(HammerRegistry.PENDING_SLAM);
-        if (pending != null && pending.valid(player)) event.setDistance(cushionedFall(event.getDistance()));
+        if (event.getEntity() instanceof ServerPlayer player) {
+            event.setDistance(fallDistance(player, event.getDistance()));
+        }
+    }
+
+    @SubscribeEvent
+    public static void tick(PlayerTickEvent.Post event) {
+        if (event.getEntity() instanceof ServerPlayer player) tick(player);
+    }
+
+    @SubscribeEvent
+    public static void onLeave(EntityLeaveLevelEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) HammerRegistry.setPendingSlam(player, null);
+    }
+    //?}
+
+    public static double fallDistance(ServerPlayer player, double distance) {
+        var pending = HammerRegistry.pendingSlam(player);
+        return pending != null && pending.valid(player) ? cushionedFall(distance) : distance;
     }
 
     static double cushionedFall(double distance) {
         return Math.max(0, distance - FALL_CUSHION);
     }
 
-    @SubscribeEvent
-    public static void tick(PlayerTickEvent.Post event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) return;
-        var pending = player.getExistingDataOrNull(HammerRegistry.PENDING_SLAM);
+    public static void tick(ServerPlayer player) {
+        var pending = HammerRegistry.pendingSlam(player);
         if (pending == null) return;
         if (!pending.valid(player)) {
-            player.removeData(HammerRegistry.PENDING_SLAM);
+            HammerRegistry.setPendingSlam(player, null);
         } else if (player.onGround() && touchesGround(player)) {
-            player.removeData(HammerRegistry.PENDING_SLAM);
+            HammerRegistry.setPendingSlam(player, null);
             impact(player);
         }
-    }
-
-    @SubscribeEvent
-    public static void onLeave(EntityLeaveLevelEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) player.removeData(HammerRegistry.PENDING_SLAM);
     }
 
     static double strength(double distance) {

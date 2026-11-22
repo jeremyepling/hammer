@@ -16,10 +16,12 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
+//? if neoforge {
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+//?}
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
@@ -27,7 +29,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Airborne Hammers slam. Grounded tools use their selected action or Auto's component fallback. */
+//? if neoforge {
 @EventBusSubscriber(modid = HammerMod.MOD_ID)
+//?}
 public class RightClickActionHandler {
 
     /**
@@ -37,9 +41,10 @@ public class RightClickActionHandler {
      */
     private static final Map<UUID, Long> recentToolModifications = new ConcurrentHashMap<>();
 
+    //? if neoforge {
     @SubscribeEvent
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-        recentToolModifications.remove(event.getEntity().getUUID());
+        forgetPlayer(event.getEntity());
     }
 
     /**
@@ -82,16 +87,32 @@ public class RightClickActionHandler {
         }
     }
 
-    private static boolean attemptAirborneSlam(Player player, InteractionHand hand) {
-        if (player.onGround() || !player.getItemInHand(hand).is(HammerRegistry.HAMMER)) return false;
+    //?}
+
+    static void forgetPlayer(Player player) {
+        recentToolModifications.remove(player.getUUID());
+    }
+
+    public static boolean attemptAirborneSlam(Player player, InteractionHand hand) {
+        if (player.onGround() || !player.getItemInHand(hand).is(HammerRegistry.HAMMER.get())) return false;
         if (player instanceof ServerPlayer serverPlayer) GroundSlam.activate(serverPlayer, hand);
         return true;
     }
 
-    private static boolean handleRightClick(Player player, InteractionHand hand, @Nullable BlockPos clickedPos, @Nullable BlockHitResult hitResult) {
+    static boolean allowsNeighborUse(Player player, InteractionHand hand, BlockHitResult original, BlockPos pos) {
+        //? if fabric {
+        /*if (player instanceof ServerPlayer serverPlayer) {
+            var hit = new BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(pos), original.getDirection(), pos, original.isInside());
+            return FabricHammerEvents.allowsBlockUse(serverPlayer, hand, hit);
+        }
+        *///?}
+        return true;
+    }
+
+    public static boolean handleRightClick(Player player, InteractionHand hand, @Nullable BlockPos clickedPos, @Nullable BlockHitResult hitResult) {
         if (attemptAirborneSlam(player, hand)) return true;
         ItemStack stack = player.getItemInHand(hand);
-        HammerAction selected = stack.getOrDefault(HammerRegistry.HAMMER_ACTION, HammerAction.AUTO);
+        HammerAction selected = stack.getOrDefault(HammerRegistry.HAMMER_ACTION.get(), HammerAction.AUTO);
         ServerPlayer serverPlayer = player instanceof ServerPlayer server ? server : null;
         switch (selected) {
             case SCAN -> {
@@ -101,7 +122,7 @@ public class RightClickActionHandler {
                 return true;
             }
             case THROW -> {
-                if (!stack.has(HammerRegistry.THROWABLE_ABILITY)) return false;
+                if (!stack.has(HammerRegistry.THROWABLE_ABILITY.get())) return false;
                 if (serverPlayer != null) ThrowItemPayload.throwItem(serverPlayer, hand);
                 return true;
             }
@@ -124,7 +145,7 @@ public class RightClickActionHandler {
 
         // Priority 1: Try multi-tool modifications if targeting a block
         if (clickedPos != null && hitResult != null) {
-            MultiToolAbilityData multiTool = stack.get(HammerRegistry.MULTI_TOOL_ABILITY);
+            MultiToolAbilityData multiTool = stack.get(HammerRegistry.MULTI_TOOL_ABILITY.get());
             if (multiTool != null) {
                 var actions = selected.toolActions(multiTool);
                 if (actions.hasAnyEnabled() && ToolModifications.apply(player, hand, clickedPos, hitResult, actions, selected != HammerAction.AUTO)) {
@@ -148,7 +169,7 @@ public class RightClickActionHandler {
         }
 
         // Priority 2: Execute RIGHT_CLICK_ACTION ability
-        RightClickAction action = stack.get(HammerRegistry.RIGHT_CLICK_ACTION);
+        RightClickAction action = stack.get(HammerRegistry.RIGHT_CLICK_ACTION.get());
         if (action == null || action.equals(RightClickAction.NONE)) {
             return false;
         }
@@ -157,11 +178,11 @@ public class RightClickActionHandler {
         String abilityName = action.abilityId().getPath();
         switch (abilityName) {
             case "throwable_ability" -> {
-                if (!stack.has(HammerRegistry.THROWABLE_ABILITY)) return false;
+                if (!stack.has(HammerRegistry.THROWABLE_ABILITY.get())) return false;
                 ThrowItemPayload.throwItem(serverPlayer, hand);
             }
             case "multi_block_mining" -> {
-                if (!stack.has(HammerRegistry.MULTI_BLOCK_MINING)) return false;
+                if (!stack.has(HammerRegistry.MULTI_BLOCK_MINING.get())) return false;
                 CycleMiningModePayload.cycleMiningMode(serverPlayer, stack);
             }
             case "lightning_ability" -> {

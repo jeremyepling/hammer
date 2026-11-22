@@ -32,7 +32,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.BlockHitResult;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 import java.util.List;
 import java.util.Set;
@@ -46,15 +45,15 @@ final class HammerProgressionPlaytest {
                     HammerSurvivalFixture.checkTool(p, HammerStage.TEMPEST));
             t.awaitClient("Rejoin with Tempest and both saved favorite shapes", mc -> {
                 var stack = mc.player.getMainHandItem();
-                var mode = stack.get(HammerRegistry.MULTI_BLOCK_MINING);
-                return stack.is(HammerRegistry.HAMMER) && HammerStage.of(stack) == HammerStage.TEMPEST
+                var mode = stack.get(HammerRegistry.MULTI_BLOCK_MINING.get());
+                return stack.is(HammerRegistry.HAMMER.get()) && HammerStage.of(stack) == HammerStage.TEMPEST
                         && mode.isFavorite(MiningShape.FLAT_3X3) && mode.isFavorite(MiningShape.BORE);
             });
             t.client("Find three charged stage variants in Tools and both cores in Ingredients", mc -> {
                 CreativeModeTabs.tryRebuildTabContents(mc.level.enabledFeatures(), false, mc.level.registryAccess());
                 var tabs = BuiltInRegistries.CREATIVE_MODE_TAB;
                 var hammers = tabs.getValueOrThrow(CreativeModeTabs.TOOLS_AND_UTILITIES).getDisplayItems()
-                        .stream().filter(stack -> stack.is(HammerRegistry.HAMMER)).toList();
+                        .stream().filter(stack -> stack.is(HammerRegistry.HAMMER.get())).toList();
                 Playtest.require(hammers.stream().map(HammerStage::of).toList().equals(List.of(HammerStage.values())),
                         "Creative tools did not contain exactly one of each stage: " + hammers);
                 for (var stack : hammers) {
@@ -62,8 +61,8 @@ final class HammerProgressionPlaytest {
                             "Incorrect Creative Hammer stack count or charge: " + stack);
                 }
                 var ingredients = tabs.getValueOrThrow(CreativeModeTabs.INGREDIENTS).getDisplayItems();
-                Playtest.require(ingredients.stream().anyMatch(s -> s.is(HammerRegistry.RESONANCE_CORE))
-                        && ingredients.stream().anyMatch(s -> s.is(HammerRegistry.TEMPEST_CORE)), "Missing Creative upgrade core");
+                Playtest.require(ingredients.stream().anyMatch(s -> s.is(HammerRegistry.RESONANCE_CORE.get()))
+                        && ingredients.stream().anyMatch(s -> s.is(HammerRegistry.TEMPEST_CORE.get())), "Missing Creative upgrade core");
             });
             return;
         }
@@ -87,7 +86,7 @@ final class HammerProgressionPlaytest {
         });
         for (HammerStage stage : HammerStage.values()) {
             if (stage != HammerStage.FORGED) t.server("Craft and smith " + stage, p -> HammerSurvivalFixture.upgrade(p, stage));
-            t.awaitClient("Receive " + stage, mc -> mc.player.getMainHandItem().is(HammerRegistry.HAMMER)
+            t.awaitClient("Receive " + stage, mc -> mc.player.getMainHandItem().is(HammerRegistry.HAMMER.get())
                     && HammerStage.of(mc.player.getMainHandItem()) == stage && mc.player.onGround());
             gallery(t, stage);
         }
@@ -169,7 +168,7 @@ final class HammerProgressionPlaytest {
         });
         t.awaitClient("See the dropped " + stage + " in front of the player", mc ->
                 mc.player.getMainHandItem().isEmpty() && !mc.level.getEntitiesOfClass(ItemEntity.class,
-                        mc.player.getBoundingBox().inflate(4), e -> e.getItem().is(HammerRegistry.HAMMER)
+                        mc.player.getBoundingBox().inflate(4), e -> e.getItem().is(HammerRegistry.HAMMER.get())
                                 && HammerStage.of(e.getItem()) == stage).isEmpty());
         t.client("Look down at the dropped item", mc -> mc.player.setXRot(32));
         t.screenshot(stem + "-dropped");
@@ -179,7 +178,7 @@ final class HammerProgressionPlaytest {
             p.setItemInHand(InteractionHand.MAIN_HAND, recovered);
             HammerSurvivalFixture.checkTool(p, stage);
         });
-        t.awaitClient("See the recovered Hammer", mc -> mc.player.getMainHandItem().is(HammerRegistry.HAMMER));
+        t.awaitClient("See the recovered Hammer", mc -> mc.player.getMainHandItem().is(HammerRegistry.HAMMER.get()));
         t.client("Restore the level view", mc -> mc.player.setXRot(0));
         if (stage == HammerStage.TEMPEST) {
             t.client("Use minimal particles", mc -> mc.options.particles().set(ParticleStatus.MINIMAL));
@@ -216,7 +215,7 @@ final class HammerProgressionPlaytest {
         // Leave ample time before the next ordinary regeneration tick to observe the exact requested charge.
         t.awaitServer("Set charge to " + charge + " just after regeneration", p -> {
             if (p.tickCount % 20 > 3) return false;
-            p.getMainHandItem().set(HammerRegistry.HAMMER_CHARGE, charge);
+            p.getMainHandItem().set(HammerRegistry.HAMMER_CHARGE.get(), charge);
             p.inventoryMenu.broadcastChanges();
             return true;
         });
@@ -229,31 +228,31 @@ final class HammerProgressionPlaytest {
                 p.level().setBlockAndUpdate(feet.above(4), Blocks.STONE.defaultBlockState()));
         t.client("Send locked shape and favorite selections to the authoritative server", mc -> {
             int slot = mc.player.getInventory().getSelectedSlot();
-            ClientPacketDistributor.sendToServer(new SelectMiningModePayload(slot, MiningShape.FLAT_7X7, true));
-            ClientPacketDistributor.sendToServer(new SelectMiningModePayload(slot, MiningShape.FLAT_7X7, false));
+            ClientSetup.sendToServer(new SelectMiningModePayload(slot, MiningShape.FLAT_7X7, true));
+            ClientSetup.sendToServer(new SelectMiningModePayload(slot, MiningShape.FLAT_7X7, false));
             // A later allowed ability selection acknowledges processing of both mining requests.
-            ClientPacketDistributor.sendToServer(new SelectHammerActionPayload(slot, HammerAction.STRIP));
+            ClientSetup.sendToServer(new SelectHammerActionPayload(slot, HammerAction.STRIP));
         });
         t.awaitServer("Reject direct 7x7 selection and favoriting", p -> {
             var tool = p.getMainHandItem();
-            if (tool.get(HammerRegistry.HAMMER_ACTION) != HammerAction.STRIP) return false;
-            var mode = tool.get(HammerRegistry.MULTI_BLOCK_MINING);
+            if (tool.get(HammerRegistry.HAMMER_ACTION.get()) != HammerAction.STRIP) return false;
+            var mode = tool.get(HammerRegistry.MULTI_BLOCK_MINING.get());
             Playtest.require(mode.shape() == MiningShape.BORE && !mode.isFavorite(MiningShape.FLAT_7X7),
                     "Accepted locked mining mode or favorite");
             return true;
         });
         t.client("Send the lightning and teleport packets directly", mc -> {
             int slot = mc.player.getInventory().getSelectedSlot();
-            ClientPacketDistributor.sendToServer(new SelectHammerActionPayload(slot, HammerAction.LIGHTNING));
-            ClientPacketDistributor.sendToServer(new SpawnLightningPayload(SpawnLightningPayload.targetFromView(mc.player)));
-            ClientPacketDistributor.sendToServer(TeleportToSurfacePayload.INSTANCE);
-            ClientPacketDistributor.sendToServer(new SelectMiningModePayload(slot, MiningShape.FLAT_3X3, false));
+            ClientSetup.sendToServer(new SelectHammerActionPayload(slot, HammerAction.LIGHTNING));
+            ClientSetup.sendToServer(new SpawnLightningPayload(SpawnLightningPayload.targetFromView(mc.player)));
+            ClientSetup.sendToServer(TeleportToSurfacePayload.INSTANCE);
+            ClientSetup.sendToServer(new SelectMiningModePayload(slot, MiningShape.FLAT_3X3, false));
         });
         t.awaitServer("Locked favorites and abilities remain rejected on the server", p -> {
             var tool = p.getMainHandItem();
-            var mode = tool.get(HammerRegistry.MULTI_BLOCK_MINING);
+            var mode = tool.get(HammerRegistry.MULTI_BLOCK_MINING.get());
             if (mode.shape() != MiningShape.FLAT_3X3) return false;
-            Playtest.require(tool.get(HammerRegistry.HAMMER_ACTION) == HammerAction.STRIP && p.blockPosition().equals(feet)
+            Playtest.require(tool.get(HammerRegistry.HAMMER_ACTION.get()) == HammerAction.STRIP && p.blockPosition().equals(feet)
                     //? if >=26.3 {
                     /*&& p.level().getEntities(EntityTypes.LIGHTNING_BOLT, bolt -> bolt.distanceToSqr(p) < 144).isEmpty(),*/
                     //?} else {
@@ -264,17 +263,17 @@ final class HammerProgressionPlaytest {
             return true;
         });
         t.client("Double-tap C with only Bore and 3x3 favorited", mc -> {
-            var key = ClientSetup.CYCLE_MINING_MODE_KEY.get().getKey();
+            var key = ClientSetup.boundKey(ClientSetup.CYCLE_MINING_MODE_KEY.get());
             KeyMapping.click(key);
             KeyMapping.click(key);
         });
         t.awaitClient("Select Single despite the favorites filter", mc ->
-                mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.SINGLE);
+                mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == MiningShape.SINGLE);
         t.client("Restore Till and Bore", mc -> {
             int slot = mc.player.getInventory().getSelectedSlot();
-            ClientPacketDistributor.sendToServer(new SelectHammerActionPayload(slot, HammerAction.TILL));
-            ClientPacketDistributor.sendToServer(new SelectMiningModePayload(slot, MiningShape.BORE, false));
+            ClientSetup.sendToServer(new SelectHammerActionPayload(slot, HammerAction.TILL));
+            ClientSetup.sendToServer(new SelectMiningModePayload(slot, MiningShape.BORE, false));
         });
-        t.awaitServer("Server accepts Bore", p -> p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.BORE);
+        t.awaitServer("Server accepts Bore", p -> p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == MiningShape.BORE);
     }
 }

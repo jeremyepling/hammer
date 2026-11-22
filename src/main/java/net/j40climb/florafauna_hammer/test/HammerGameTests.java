@@ -3,35 +3,33 @@ package net.j40climb.florafauna_hammer.test;
 import net.j40climb.florafauna_hammer.HammerMod;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningModeData;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
-import net.minecraft.core.Holder;
 import net.j40climb.florafauna_hammer.common.item.abilities.SeismicTerrainGameTests;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.gametest.framework.TestData;
-import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.resources.Identifier;
-import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 
 import java.util.function.Consumer;
 
 public final class HammerGameTests {
     private static final Identifier EMPTY_STRUCTURE = Identifier.withDefaultNamespace("empty");
 
-    public static void registerTests(RegisterGameTestsEvent event) {
-        var env = event.registerEnvironment(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "default"),
-                new TestEnvironmentDefinition.AllOf());
-        registerMiningModeTests(event, env);
-        HammerProgressionGameTests.register(event, env);
-        HammerAbilityGameTests.register(event, env);
-        HammerPowerGameTests.register(event, env);
-        HammerSlamLifecycleGameTests.register(event, env);
-        registerTest(event, env, "hammer_seismic_loaded_terrain", SeismicTerrainGameTests::checkLoadedTerrain);
-        ChargedHammerGameTests.register(event, env);
-        HammerMiningGameTests.register(event, env);
+    @FunctionalInterface
+    interface Registrar {
+        void register(Identifier id, Identifier structure, int maxTicks, int setupTicks, Consumer<GameTestHelper> run);
+    }
+
+    static void registerTests(Registrar tests) {
+        registerMiningModeTests(tests);
+        HammerProgressionGameTests.register(tests);
+        HammerAbilityGameTests.register(tests);
+        HammerPowerGameTests.register(tests);
+        HammerSlamLifecycleGameTests.register(tests);
+        registerTest(tests, "hammer_seismic_loaded_terrain", SeismicTerrainGameTests::checkLoadedTerrain);
+        ChargedHammerGameTests.register(tests);
+        HammerMiningGameTests.register(tests);
     }
 
     static void registerStructureTest(
-            RegisterGameTestsEvent event,
-            Holder<TestEnvironmentDefinition<?>> env,
+            Registrar tests,
             String name,
             Identifier structure,
             int maxTicks,
@@ -39,45 +37,27 @@ public final class HammerGameTests {
     ) {
         Identifier testId = Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, name);
 
-        TestData<Holder<TestEnvironmentDefinition<?>>> testData = new TestData<>(
-                env,
-                structure,
-                maxTicks,
-                20,   // setupTicks - give block entities time to load
-                true  // required
-        );
-
-        event.registerTest(testId, new SimpleGameTestInstance(testData, testFunction));
+        tests.register(testId, structure, maxTicks, 20, testFunction);
     }
 
     /**
      * Register a test with the default empty structure and settings.
      */
     static void registerTest(
-            RegisterGameTestsEvent event,
-            Holder<TestEnvironmentDefinition<?>> env,
+            Registrar tests,
             String name,
             Consumer<GameTestHelper> testFunction
     ) {
         Identifier testId = Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, name);
 
-        TestData<Holder<TestEnvironmentDefinition<?>>> testData = new TestData<>(
-                env,
-                EMPTY_STRUCTURE,
-                100, // maxTicks
-                0,   // setupTicks
-                true  // required
-        );
-
-        // Create a SimpleGameTestInstance wrapper
-        event.registerTest(testId, new SimpleGameTestInstance(testData, testFunction));
+        tests.register(testId, EMPTY_STRUCTURE, 100, 0, testFunction);
     }
 
-    private static void registerMiningModeTests(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env) {
-        registerTest(event, env, "mining_mode_initial_state", HammerGameTests::testMiningModeInitialState);
-        registerTest(event, env, "mining_mode_cycling", HammerGameTests::testMiningModeCycling);
-        registerTest(event, env, "mining_mode_wrap_around", HammerGameTests::testMiningModeWrapAround);
-        registerTest(event, env, "mining_mode_radius_per_shape", HammerGameTests::testMiningModeRadiusPerShape);
+    private static void registerMiningModeTests(Registrar tests) {
+        registerTest(tests, "mining_mode_initial_state", HammerGameTests::testMiningModeInitialState);
+        registerTest(tests, "mining_mode_cycling", HammerGameTests::testMiningModeCycling);
+        registerTest(tests, "mining_mode_wrap_around", HammerGameTests::testMiningModeWrapAround);
+        registerTest(tests, "mining_mode_radius_per_shape", HammerGameTests::testMiningModeRadiusPerShape);
     }
 
     private static void testMiningModeInitialState(GameTestHelper helper) {

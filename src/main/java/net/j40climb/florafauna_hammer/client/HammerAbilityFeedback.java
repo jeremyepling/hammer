@@ -13,23 +13,13 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
 
-@EventBusSubscriber(modid = HammerMod.MOD_ID, value = Dist.CLIENT)
 public final class HammerAbilityFeedback {
     private static final DustParticleOptions VIOLET = new DustParticleOptions(0xBF87FA, 0.6F);
     private static final Vec3 UP = new Vec3(0, 1, 0);
     private HammerAbilityFeedback() {}
 
-    @SubscribeEvent
-    public static void networking(RegisterClientPayloadHandlersEvent event) {
-        event.register(HammerCorePayload.TYPE, (packet, context) -> receive(packet));
-    }
-
-    private static void receive(HammerCorePayload packet) {
+    public static void receive(HammerCorePayload packet) {
         var level = Minecraft.getInstance().level;
         if (level == null || !(level.getEntity(packet.playerId()) instanceof Player player)) return;
         switch (packet.cue()) {

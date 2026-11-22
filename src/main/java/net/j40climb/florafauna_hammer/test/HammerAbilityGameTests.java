@@ -1,9 +1,7 @@
 package net.j40climb.florafauna_hammer.test;
 
 import com.google.gson.JsonParser;
-import com.mojang.authlib.GameProfile;
 import com.mojang.serialization.JsonOps;
-import net.j40climb.florafauna_hammer.common.item.abilities.RightClickActionHandler;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningModeData;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
@@ -18,10 +16,8 @@ import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
@@ -32,32 +28,25 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.common.util.FakePlayer;
-import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
-import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 
-import java.util.UUID;
-import java.util.function.Consumer;
 
 final class HammerAbilityGameTests {
-    static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env) {
-        HammerGameTests.registerTest(event, env, "hammer_legacy_saved_stack", HammerAbilityGameTests::legacySavedStack);
-        HammerGameTests.registerTest(event, env, "hammer_fresh_and_configured_loot", HammerAbilityGameTests::checkConfigurations);
-        HammerGameTests.registerTest(event, env, "hammer_block_action_dispatch", HammerAbilityGameTests::checkBlockActions);
-        HammerGameTests.registerTest(event, env, "hammer_throw_single_item_and_reload", HammerAbilityGameTests::checkThrow);
-        HammerGameTests.registerTest(event, env, "hammer_throw_rejected_or_inventory_full", HammerAbilityGameTests::checkThrowFailure);
+    static void register(HammerGameTests.Registrar tests) {
+        HammerGameTests.registerTest(tests, "hammer_legacy_saved_stack", HammerAbilityGameTests::legacySavedStack);
+        HammerGameTests.registerTest(tests, "hammer_fresh_and_configured_loot", HammerAbilityGameTests::checkConfigurations);
+        HammerGameTests.registerTest(tests, "hammer_block_action_dispatch", HammerAbilityGameTests::checkBlockActions);
+        HammerGameTests.registerTest(tests, "hammer_throw_single_item_and_reload", HammerAbilityGameTests::checkThrow);
+        HammerGameTests.registerTest(tests, "hammer_throw_rejected_or_inventory_full", HammerAbilityGameTests::checkThrowFailure);
     }
 
     private static ServerPlayer player(GameTestHelper helper) {
-        ServerPlayer player = new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), "hammer-test"));
+        ServerPlayer player = TestPlatform.player(helper.getLevel(), "hammer-test");
         player.setGameMode(GameType.SURVIVAL);
         player.setPos(Vec3.atCenterOf(helper.absolutePos(new BlockPos(1, 2, 1))));
         player.setOnGround(true);
@@ -75,11 +64,11 @@ final class HammerAbilityGameTests {
                 """);
         var ops = helper.getLevel().registryAccess().createSerializationContext(JsonOps.INSTANCE);
         ItemStack stack = ItemStack.CODEC.parse(ops, saved).getOrThrow();
-        helper.assertTrue(stack.is(HammerRegistry.HAMMER.get()) && stack.get(HammerRegistry.HAMMER_CHARGE) == 17
-                && stack.get(HammerRegistry.HAMMER_ACTION) == HammerAction.STRIP, "Saved Hammer lost its identity, charge or action");
-        var mode = stack.get(HammerRegistry.MULTI_BLOCK_MINING);
+        helper.assertTrue(stack.is(HammerRegistry.HAMMER.get()) && stack.get(HammerRegistry.HAMMER_CHARGE.get()) == 17
+                && stack.get(HammerRegistry.HAMMER_ACTION.get()) == HammerAction.STRIP, "Saved Hammer lost its identity, charge or action");
+        var mode = stack.get(HammerRegistry.MULTI_BLOCK_MINING.get());
         helper.assertTrue(mode.shape() == MiningShape.TUNNEL_DOWN && mode.maxBlocksToBreak() == 24
-                && stack.get(HammerRegistry.TOOL_CONFIG).equals(new ToolConfig(false, true, MiningSpeed.STANDARD)),
+                && stack.get(HammerRegistry.TOOL_CONFIG.get()).equals(new ToolConfig(false, true, MiningSpeed.STANDARD)),
                 "Legacy mining settings did not decode with their original defaults");
         helper.assertTrue(stack.is(ItemTags.AXES) && stack.is(ItemTags.HOES) && stack.is(ItemTags.SHOVELS)
                 && stack.is(ItemTags.PICKAXES), "The installed Hammer must belong to all four tool tags");
@@ -92,14 +81,13 @@ final class HammerAbilityGameTests {
         player.setItemInHand(InteractionHand.MAIN_HAND, hammer);
         BlockPos target = helper.absolutePos(new BlockPos(1, 1, 1));
         var hit = new BlockHitResult(Vec3.atCenterOf(target), Direction.UP, target, false);
-        hammer.set(HammerRegistry.MULTI_BLOCK_MINING, new MiningModeData(MiningShape.FLAT_3X3, 1, 64, true));
+        hammer.set(HammerRegistry.MULTI_BLOCK_MINING.get(), new MiningModeData(MiningShape.FLAT_3X3, 1, 64, true));
         for (var mode : java.util.List.of(HammerAction.AUTO, HammerAction.STRIP, HammerAction.PATH, HammerAction.TILL, HammerAction.THROW)) {
-            hammer.set(HammerRegistry.HAMMER_ACTION, mode);
+            hammer.set(HammerRegistry.HAMMER_ACTION.get(), mode);
             var original = mode == HammerAction.STRIP || mode == HammerAction.THROW ? Blocks.OAK_LOG : Blocks.DIRT;
             helper.getLevel().setBlockAndUpdate(target, original.defaultBlockState());
             helper.getLevel().setBlockAndUpdate(target.above(), Blocks.AIR.defaultBlockState());
-            var use = new PlayerInteractEvent.RightClickBlock(player, InteractionHand.MAIN_HAND, target, hit);
-            RightClickActionHandler.onRightClickBlock(use);
+            boolean use = TestPlatform.clickBlock(player, InteractionHand.MAIN_HAND, hit);
             var expected = switch (mode) {
                 case AUTO, PATH -> Blocks.DIRT_PATH;
                 case STRIP -> Blocks.STRIPPED_OAK_LOG;
@@ -107,22 +95,20 @@ final class HammerAbilityGameTests {
                 case THROW -> Blocks.OAK_LOG;
                 default -> throw new AssertionError(mode);
             };
-            helper.assertTrue(use.isCanceled() && helper.getLevel().getBlockState(target).is(expected), "Wrong effect for " + mode);
+            helper.assertTrue(use && helper.getLevel().getBlockState(target).is(expected), "Wrong effect for " + mode);
             if (mode == HammerAction.THROW) {
                 var thrown = helper.getLevel().getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == player);
                 helper.assertTrue(hammer.isEmpty() && thrown.size() == 1 &&
-                        thrown.getFirst().getThrownItem().get(HammerRegistry.HAMMER_ACTION) == mode, "Throw lost the selected action or the tool");
+                        thrown.getFirst().getThrownItem().get(HammerRegistry.HAMMER_ACTION.get()) == mode, "Throw lost the selected action or the tool");
                 thrown.getFirst().discard();
             } else if (mode != HammerAction.AUTO) {
                 helper.getLevel().setBlockAndUpdate(target, Blocks.CRAFTING_TABLE.defaultBlockState());
                 var neighbor = mode == HammerAction.STRIP ? Blocks.OAK_LOG : Blocks.DIRT;
                 helper.getLevel().setBlockAndUpdate(target.east(), neighbor.defaultBlockState());
                 helper.getLevel().setBlockAndUpdate(target.east().above(), Blocks.AIR.defaultBlockState());
-                var table = new PlayerInteractEvent.RightClickBlock(player, InteractionHand.MAIN_HAND, target, hit);
-                RightClickActionHandler.onRightClickBlock(table);
-                var air = new PlayerInteractEvent.RightClickItem(player, InteractionHand.MAIN_HAND);
-                RightClickActionHandler.onRightClickItem(air);
-                helper.assertTrue(!table.isCanceled() && !air.isCanceled() && !hammer.isEmpty()
+                boolean table = TestPlatform.clickBlock(player, InteractionHand.MAIN_HAND, hit);
+                boolean air = TestPlatform.clickAir(player, InteractionHand.MAIN_HAND);
+                helper.assertTrue(!table && !air && !hammer.isEmpty()
                                 && helper.getLevel().getBlockState(target.east()).is(neighbor),
                         "An inapplicable explicit action consumed vanilla interaction or threw the tool");
             }
@@ -134,26 +120,26 @@ final class HammerAbilityGameTests {
         ServerPlayer player = player(helper);
         ItemStack hammer = HammerStage.TEMPEST.createStack();
         player.setItemInHand(InteractionHand.MAIN_HAND, hammer);
-        var fortune = helper.getLevel().registryAccess().holderOrThrow(Enchantments.FORTUNE);
-        var silk = helper.getLevel().registryAccess().holderOrThrow(Enchantments.SILK_TOUCH);
+        var fortune = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.FORTUNE);
+        var silk = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.SILK_TOUCH);
         helper.assertTrue(hammer.getEnchantments().getLevel(fortune) == 3, "Fresh Hammer must already have Fortune III");
         var stone = Blocks.STONE.defaultBlockState();
         var pos = player.blockPosition();
         var speedWithoutConfig = hammer.copy();
-        speedWithoutConfig.remove(HammerRegistry.TOOL_CONFIG);
+        speedWithoutConfig.remove(HammerRegistry.TOOL_CONFIG.get());
         player.setItemInHand(InteractionHand.MAIN_HAND, speedWithoutConfig);
-        float originalSpeed = player.getDestroySpeed(stone, pos);
+        float originalSpeed = TestPlatform.destroySpeed(player, stone, pos);
         player.setItemInHand(InteractionHand.MAIN_HAND, hammer);
         for (MiningShape shape : MiningShape.values()) {
             var mode = new MiningModeData(shape, shape.getRadius(), 64, true);
-            hammer.set(HammerRegistry.MULTI_BLOCK_MINING, mode);
+            hammer.set(HammerRegistry.MULTI_BLOCK_MINING.get(), mode);
             for (MiningSpeed speed : MiningSpeed.values()) {
                 for (boolean useFortune : new boolean[]{false, true}) {
                     ToolConfig config = new ToolConfig(useFortune, !useFortune, speed);
                     UpdateToolConfigPayload.applyToHeldItem(player, config);
                     String description = shape + " / " + speed + " / " + config.getEnchantmentType();
-                    helper.assertTrue(config.equals(hammer.get(HammerRegistry.TOOL_CONFIG)), description);
-                    helper.assertTrue(mode.equals(hammer.get(HammerRegistry.MULTI_BLOCK_MINING)), "Config changed shape: " + description);
+                    helper.assertTrue(config.equals(hammer.get(HammerRegistry.TOOL_CONFIG.get())), description);
+                    helper.assertTrue(mode.equals(hammer.get(HammerRegistry.MULTI_BLOCK_MINING.get())), "Config changed shape: " + description);
                     helper.assertTrue(hammer.getEnchantments().getLevel(fortune) == (useFortune ? 3 : 0)
                             && hammer.getEnchantments().getLevel(silk) == (useFortune ? 0 : 1), description);
                     float expected = switch (speed) {
@@ -161,7 +147,7 @@ final class HammerAbilityGameTests {
                         case EFFICIENCY -> 35;
                         case INSTABREAK -> 100;
                     };
-                    helper.assertTrue(player.getDestroySpeed(stone, pos) == expected, "Effective speed: " + description);
+                    helper.assertTrue(TestPlatform.destroySpeed(player, stone, pos) == expected, "Effective speed: " + description);
                 }
             }
         }
@@ -174,16 +160,10 @@ final class HammerAbilityGameTests {
         hammer.set(DataComponents.CUSTOM_NAME, Component.literal("Quarry Hammer"));
         var expected = hammer.copy();
         player.setItemInHand(InteractionHand.MAIN_HAND, hammer);
-        Consumer<EntityJoinLevelEvent> cancel = event -> {
-            if (event.getEntity() instanceof ThrownItemEntity item && item.getOwner() == player) event.setCanceled(true);
-        };
-        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, EntityJoinLevelEvent.class, cancel);
-        try {
-            ThrowItemPayload.throwItem(player, InteractionHand.MAIN_HAND);
-            helper.assertTrue(ItemStack.matches(expected, player.getMainHandItem()), "Rejected throw consumed the Hammer");
-        } finally {
-            NeoForge.EVENT_BUS.unregister(cancel);
-        }
+        //? if neoforge {
+        TestPlatform.withRejectedThrow(player, () -> ThrowItemPayload.throwItem(player, InteractionHand.MAIN_HAND));
+        helper.assertTrue(ItemStack.matches(expected, player.getMainHandItem()), "Rejected throw consumed the Hammer");
+        //?}
 
         ThrowItemPayload.throwItem(player, InteractionHand.MAIN_HAND);
         var entities = helper.getLevel().getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == player);
@@ -205,7 +185,7 @@ final class HammerAbilityGameTests {
     private static void checkThrow(GameTestHelper helper) {
         ServerPlayer player = player(helper);
         ItemStack stack = new ItemStack(Items.STICK, 16);
-        stack.set(HammerRegistry.THROWABLE_ABILITY, ThrowableAbilityData.DEFAULT);
+        stack.set(HammerRegistry.THROWABLE_ABILITY.get(), ThrowableAbilityData.DEFAULT);
         stack.set(DataComponents.CUSTOM_NAME, Component.literal("Returning stick"));
         player.setItemInHand(InteractionHand.MAIN_HAND, stack);
         ThrowItemPayload.throwItem(player, InteractionHand.MAIN_HAND);

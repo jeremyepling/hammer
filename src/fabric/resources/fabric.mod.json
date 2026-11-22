@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "florafauna_hammer",
+  "version": "${version}",
+  "name": "FloraFauna Hammer",
+  "description": "A configurable mining and throwing hammer.",
+  "authors": [
+    "j40climb"
+  ],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.j40climb.florafauna_hammer.FabricHammer"
+    ],
+    "client": [
+      "net.j40climb.florafauna_hammer.setup.ClientSetup"
+    ]
+  },
+  "mixins": [
+    "florafauna_hammer.mixins.json",
+    "florafauna_hammer.fabric.mixins.json",
+    {
+      "config": "florafauna_hammer.fabric.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "accessWidener": "florafauna_hammer.accesswidener",
+  "depends": {
+    "fabricloader": ">=${fabric_loader_version}",
+    "fabric-api": ">=${fabric_api_version}",
+    "minecraft": "${minecraft_version}",
+    "java": ">=25"
+  },
+  "breaks": {
+    "florafauna": "<0.0.2"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:smithing_transform",
+  "base": {
+    "fabric:type": "fabric:components",
+    "base": "florafauna:hammer",
+    "components": {
+      "florafauna:hammer_stage": "forged"
+    }
+  },
+  "addition": "florafauna:resonance_core",
+  "result": {
+    "id": "florafauna:hammer",
+    "components": {
+      "florafauna:hammer_stage": "resonant",
+      "florafauna:hammer_charge": 64
+    }
+  }
+}

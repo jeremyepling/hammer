@@ -6,10 +6,8 @@ import net.j40climb.florafauna_hammer.common.item.abilities.data.ToolConfig;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -21,13 +19,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.WallTorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.RegisterGameTestsEvent;
-import net.neoforged.neoforge.event.level.BlockEvent;
-//? if >=26.3 {
-/*import net.neoforged.neoforge.event.level.block.BreakBlockEvent;*/
-//?}
 
 import java.util.HashMap;
 import java.util.function.Consumer;
@@ -35,29 +26,29 @@ import java.util.function.Consumer;
 import static net.j40climb.florafauna_hammer.test.HammerMiningGameTests.*;
 
 final class HammerLightingGameTests {
-    static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env, Identifier mine) {
+    static void register(HammerGameTests.Registrar tests, Identifier mine) {
         for (MiningShape shape : new MiningShape[]{MiningShape.WALKABLE_TUNNEL, MiningShape.LARGE_TUNNEL,
                 MiningShape.TUNNEL_UP, MiningShape.TUNNEL_DOWN}) {
-            register(event, env, mine, shape.getSerializedName(), h -> supported(h, shape));
+            register(tests, mine, shape.getSerializedName(), h -> supported(h, shape));
         }
         for (String condition : new String[]{"disabled", "empty", "left_only", "bright", "cancel_center", "cancel_place",
                 "bore", "vertical", "single"}) {
-            register(event, env, mine, condition, h -> withheld(h, condition));
+            register(tests, mine, condition, h -> withheld(h, condition));
         }
-        register(event, env, mine, "unloaded_wall", HammerLightingGameTests::unloadedWall);
-        register(event, env, mine, "separate_dark_passage", HammerLightingGameTests::separatePassage);
-        register(event, env, mine, "spacing", HammerLightingGameTests::spacing);
+        register(tests, mine, "unloaded_wall", HammerLightingGameTests::unloadedWall);
+        register(tests, mine, "separate_dark_passage", HammerLightingGameTests::separatePassage);
+        register(tests, mine, "spacing", HammerLightingGameTests::spacing);
     }
 
-    private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env, Identifier mine,
+    private static void register(HammerGameTests.Registrar tests, Identifier mine,
                                  String name, Consumer<GameTestHelper> test) {
-        HammerGameTests.registerStructureTest(event, env, "hammer_lighting_" + name, mine, 160, test);
+        HammerGameTests.registerStructureTest(tests, "hammer_lighting_" + name, mine, 160, test);
     }
 
     private static ServerPlayer equipped(GameTestHelper h, MiningShape shape) {
         ServerPlayer player = player(h, shape);
         player.setGameMode(GameType.SURVIVAL);
-        player.getMainHandItem().set(HammerRegistry.TOOL_CONFIG,
+        player.getMainHandItem().set(HammerRegistry.TOOL_CONFIG.get(),
                 ToolConfig.DEFAULT.withMiningSpeed(MiningSpeed.INSTABREAK).withToggledTunnelLighting());
         player.getInventory().setItem(12, new ItemStack(Items.TORCH, 3));
         return player;
@@ -117,40 +108,27 @@ final class HammerLightingGameTests {
         ServerPlayer player = equipped(h, shape);
         BlockPos c = rock(h, player);
         switch (condition) {
-            case "disabled" -> player.getMainHandItem().set(HammerRegistry.TOOL_CONFIG, ToolConfig.DEFAULT.withMiningSpeed(MiningSpeed.INSTABREAK));
+            case "disabled" -> player.getMainHandItem().set(HammerRegistry.TOOL_CONFIG.get(), ToolConfig.DEFAULT.withMiningSpeed(MiningSpeed.INSTABREAK));
             case "empty" -> player.getInventory().setItem(12, ItemStack.EMPTY);
             case "left_only" -> fill(player, c.south(), c.south().east(4).above(2), Blocks.AIR);
             case "bright" -> fill(player, c.north().above(), c.east(4).north().above(), Blocks.GLOWSTONE);
         }
         int supply = count(player);
-        //? if >=26.3 {
-        /*Consumer<BreakBlockEvent> denyBreak = e -> {*/
-        //?} else {
-        Consumer<BlockEvent.BreakEvent> denyBreak = e -> {
-        //?}
-            if (e.getPlayer() == player && e.getPos().equals(c)) e.setCanceled(true);
-        };
         boolean[] attempted = {false};
-        Consumer<BlockEvent.EntityPlaceEvent> denyPlace = e -> {
-            if (e.getEntity() == player && e.getPlacedBlock().is(Blocks.WALL_TORCH)) {
-                attempted[0] = true;
-                e.setCanceled(true);
-            }
-        };
         h.runAfterDelay(8, () -> {
-            //? if >=26.3 {
-            /*if (condition.equals("cancel_center")) NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BreakBlockEvent.class, denyBreak);*/
-            //?} else {
-            if (condition.equals("cancel_center")) NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BlockEvent.BreakEvent.class, denyBreak);
-            //?}
-            if (condition.equals("cancel_place")) NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BlockEvent.EntityPlaceEvent.class, denyPlace);
+            Runnable releaseCenter = condition.equals("cancel_center") ? TestPlatform.vetoBreak(player, c::equals) : () -> {};
+            Runnable releasePlace = condition.equals("cancel_place") ? TestPlatform.vetoPlacement(player, (pos, block) -> {
+                if (block != Blocks.WALL_TORCH) return false;
+                attempted[0] = true;
+                return true;
+            }) : () -> {};
             try {
                 swing(player, c, condition.equals("vertical") ? Direction.UP : Direction.WEST, Direction.EAST);
             } finally {
-                if (condition.equals("cancel_center")) NeoForge.EVENT_BUS.unregister(denyBreak);
+                releaseCenter.run();
             }
             h.runAfterDelay(25, () -> {
-                if (condition.equals("cancel_place")) NeoForge.EVENT_BUS.unregister(denyPlace);
+                releasePlace.run();
                 h.assertTrue(!condition.equals("cancel_place") || attempted[0], "No cancellable torch placement was attempted");
                 check(h, c, condition.equals("cancel_center") ? Blocks.STONE : Blocks.AIR, "center break");
                 h.assertTrue(count(player) == supply, "Unexpected torch consumption with " + condition);

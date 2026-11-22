@@ -16,7 +16,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.common.Tags;
+import net.j40climb.florafauna_hammer.common.item.abilities.OreTags;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
@@ -78,7 +78,7 @@ public final class MultiBlockPatterns {
 
     static List<BlockPos> vein(Player player, ItemStack tool, MiningModeData mode, BlockPos center) {
         Level level = player.level();
-        boolean exact = tool.getOrDefault(HammerRegistry.TOOL_CONFIG, ToolConfig.DEFAULT).exactVein();
+        boolean exact = tool.getOrDefault(HammerRegistry.TOOL_CONFIG.get(), ToolConfig.DEFAULT).exactVein();
         Predicate<BlockState> matches = veinMatcher(level.getBlockState(center), exact);
         var queue = new ArrayDeque<BlockPos>();
         Set<BlockPos> visited = new HashSet<>();
@@ -143,11 +143,7 @@ public final class MultiBlockPatterns {
     }
 
     private static boolean isStoneOrDeepslateOre(BlockState state) {
-        //? if <26.3 {
-        return state.is(Tags.Blocks.ORES_IN_GROUND_STONE) || state.is(Tags.Blocks.ORES_IN_GROUND_DEEPSLATE);
-        //?} else {
-        /*return state.is(Tags.BlockItems.ORES_IN_GROUND_STONE.block()) || state.is(Tags.BlockItems.ORES_IN_GROUND_DEEPSLATE.block());
-        *///?}
+        return state.is(OreTags.STONE) || state.is(OreTags.DEEPSLATE);
     }
 
     private static Plan tunnel(Player player, ItemStack tool, MiningModeData mode, BlockPos center, Direction face) {

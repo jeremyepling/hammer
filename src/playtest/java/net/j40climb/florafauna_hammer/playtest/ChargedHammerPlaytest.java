@@ -32,10 +32,10 @@ final class ChargedHammerPlaytest {
         t.client("Hold the mapped throw key", mc -> {
             var key = ClientSetup.THROW_ITEM_KEY.get();
             key.setDown(true);
-            KeyMapping.click(key.getKey());
+            KeyMapping.click(ClientSetup.boundKey(key));
         });
         t.awaitServer("Reach the ore-strike threshold with the Hammer still in hand", p -> {
-            var hold = p.getExistingDataOrNull(HammerRegistry.THROW_HOLD);
+            var hold = HammerRegistry.throwHold(p);
             return hold != null && p.level().getGameTime() - hold.start() >= ChargedThrowPayload.HOLD_TICKS
                     && p.getMainHandItem().is(HammerRegistry.HAMMER.get());
         });

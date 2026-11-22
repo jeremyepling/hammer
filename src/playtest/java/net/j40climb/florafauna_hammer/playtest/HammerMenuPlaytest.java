@@ -14,7 +14,7 @@ final class HammerMenuPlaytest {
         t.server("Prepare ordinary dirt with both till and path enabled", p -> {
             p.level().setBlockAndUpdate(target, Blocks.DIRT.defaultBlockState());
             p.level().setBlockAndUpdate(target.above(), Blocks.AIR.defaultBlockState());
-            p.getMainHandItem().set(HammerRegistry.MULTI_TOOL_ABILITY, MultiToolAbilityData.DEFAULT);
+            p.getMainHandItem().set(HammerRegistry.MULTI_TOOL_ABILITY.get(), MultiToolAbilityData.DEFAULT);
             p.inventoryMenu.broadcastChanges();
         });
         choose(t, HammerAction.TILL);
@@ -22,7 +22,7 @@ final class HammerMenuPlaytest {
                 && mc.hitResult instanceof BlockHitResult hit && hit.getBlockPos().equals(target));
         t.client("Use the selected Till action", mc -> mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, (BlockHitResult) mc.hitResult));
         t.awaitServer("Till won over Path and kept the selected mining shape", p -> p.level().getBlockState(target).is(Blocks.FARMLAND)
-                && p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.FLAT_5X5);
+                && p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == MiningShape.FLAT_5X5);
         choose(t, HammerAction.AUTO);
     }
 
@@ -34,8 +34,8 @@ final class HammerMenuPlaytest {
             HammerPlaytest.click(mc, HammerPlaytest.button(mc, HammerRadialPlaytest.actionLabel(action)));
             HammerPlaytest.releaseWheel(mc);
         });
-        t.awaitServer("Persist " + action.getSerializedName() + " on the server's Hammer", p -> p.getMainHandItem().get(HammerRegistry.HAMMER_ACTION) == action);
+        t.awaitServer("Persist " + action.getSerializedName() + " on the server's Hammer", p -> p.getMainHandItem().get(HammerRegistry.HAMMER_ACTION.get()) == action);
         t.awaitClient("Sync " + action.getSerializedName() + " back to the held tool", mc -> Playtest.screen(mc) == null
-                && mc.player.getMainHandItem().get(HammerRegistry.HAMMER_ACTION) == action);
+                && mc.player.getMainHandItem().get(HammerRegistry.HAMMER_ACTION.get()) == action);
     }
 }

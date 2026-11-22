@@ -8,16 +8,18 @@ import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.j40climb.florafauna_hammer.common.item.abilities.networking.HammerNetwork;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.chunk.LevelChunk;
+//? if neoforge {
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
+//?}
 
 import java.util.ArrayDeque;
 import java.util.HashSet;
@@ -26,7 +28,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+//? if neoforge {
 @EventBusSubscriber(modid = HammerMod.MOD_ID)
+//?}
 public final class SeismicScanner {
     public static final int RADIUS = 24;
     public static final int HIGHLIGHT_TICKS = 100;
@@ -58,32 +62,43 @@ public final class SeismicScanner {
             player.sendOverlayMessage(Component.translatable("message.florafauna_hammer.scan.charge", CHARGE_COST));
             return false;
         }
-        stack.set(HammerRegistry.HAMMER_CHARGE, charge - CHARGE_COST);
+        stack.set(HammerRegistry.HAMMER_CHARGE.get(), charge - CHARGE_COST);
         cooldowns.putLast(id, now + COOLDOWN_TICKS);
         pending.add(id);
         var origin = player.blockPosition().immutable();
         var level = player.level();
         queue.addLast(new Scan(id, level, origin, new OreDepositSearch(origin, RADIUS, MAX_DEPOSITS)));
         HammerCorePayload.send(player, hand, HammerCorePayload.Cue.SCAN);
-        PacketDistributor.sendToPlayer(player, new SeismicScanPayload(level.dimension().identifier(), origin, true, List.of()));
+        HammerNetwork.sendToPlayer(player, new SeismicScanPayload(level.dimension().identifier(), origin, true, List.of()));
         return true;
     }
 
+    //? if neoforge {
     @SubscribeEvent
     public static void tick(ServerTickEvent.Post event) {
-        long now = event.getServer().overworld().getGameTime();
+        tick(event.getServer());
+    }
+
+    @SubscribeEvent
+    public static void stop(ServerStoppedEvent event) {
+        stop();
+    }
+    //?}
+
+    static void tick(MinecraftServer server) {
+        long now = server.overworld().getGameTime();
         while (!cooldowns.isEmpty() && cooldowns.firstEntry().getValue() <= now) cooldowns.pollFirstEntry();
         if (queue.isEmpty()) return;
         long started = System.nanoTime();
         for (int work = 0; work < WORK_PER_TICK && !queue.isEmpty(); work += SLICE) {
             Scan scan = queue.removeFirst();
-            ServerPlayer owner = event.getServer().getPlayerList().getPlayer(scan.owner);
+            ServerPlayer owner = server.getPlayerList().getPlayer(scan.owner);
             if (owner == null || owner.level() != scan.level || !owner.isAlive()) {
                 pending.remove(scan.owner);
             } else if (scan.search.advance(SLICE, new LoadedOres(scan.level))) {
                 pending.remove(scan.owner);
                 var markers = scan.search.markers();
-                PacketDistributor.sendToPlayer(owner, new SeismicScanPayload(scan.level.dimension().identifier(),
+                HammerNetwork.sendToPlayer(owner, new SeismicScanPayload(scan.level.dimension().identifier(),
                         scan.origin, false, markers));
                 owner.sendOverlayMessage(markers.isEmpty() ? Component.translatable("message.florafauna_hammer.scan.empty")
                         : Component.translatable("message.florafauna_hammer.scan.found", markers.size()));
@@ -113,16 +128,11 @@ public final class SeismicScanner {
                 chunkZ = z >> 4;
                 chunk = level.getChunkSource().getChunkNow(chunkX, chunkZ);
             }
-            //? if <26.3 {
-            return chunk != null && chunk.getBlockState(cursor.set(x, y, z)).is(Tags.Blocks.ORES);
-            //?} else {
-            /*return chunk != null && chunk.getBlockState(cursor.set(x, y, z)).is(Tags.BlockItems.ORES.block());
-            *///?}
+            return chunk != null && chunk.getBlockState(cursor.set(x, y, z)).is(OreTags.ORES);
         }
     }
 
-    @SubscribeEvent
-    public static void stop(ServerStoppedEvent event) {
+    static void stop() {
         queue.clear();
         pending.clear();
         cooldowns.clear();

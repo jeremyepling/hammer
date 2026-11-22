@@ -45,7 +45,7 @@ public record MiningModeData(MiningShape shape, int radius, int maxBlocksToBreak
 
     /** Apply stage limits at use time too, including for stacks configured by commands. */
     public static MiningModeData effective(ItemStack stack) {
-        MiningModeData mode = stack.getOrDefault(HammerRegistry.MULTI_BLOCK_MINING, DEFAULT);
+        MiningModeData mode = stack.getOrDefault(HammerRegistry.MULTI_BLOCK_MINING.get(), DEFAULT);
         HammerStage stage = HammerStage.of(stack);
         if (!stage.allows(mode.shape)) return mode.withShape(MiningShape.SINGLE);
         if (stage == HammerStage.FORGED && mode.shape == MiningShape.FLAT_3X3 && mode.radius > mode.shape.getRadius()) {

@@ -10,12 +10,12 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
  * Network packet to update tool configuration.
@@ -35,19 +35,19 @@ public record UpdateToolConfigPayload(int slot, ToolConfig config) implements Cu
             UpdateToolConfigPayload::new
     );
 
-    public static void onServerReceived(final UpdateToolConfigPayload data, final IPayloadContext context) {
-        if (context.player().getInventory().getSelectedSlot() == data.slot) {
-            applyToHeldItem(context.player(), data.config);
+    public static void onServerReceived(final UpdateToolConfigPayload data, final ServerPlayer player) {
+        if (player.getInventory().getSelectedSlot() == data.slot) {
+            applyToHeldItem(player, data.config);
         }
     }
 
     public static void applyToHeldItem(Player player, ToolConfig config) {
         ItemStack stack = player.getMainHandItem();
-        if (!stack.has(HammerRegistry.TOOL_CONFIG) || !HammerStage.of(stack).allows(config.miningSpeed())) return;
-        stack.set(HammerRegistry.TOOL_CONFIG, config);
+        if (!stack.has(HammerRegistry.TOOL_CONFIG.get()) || !HammerStage.of(stack).allows(config.miningSpeed())) return;
+        stack.set(HammerRegistry.TOOL_CONFIG.get(), config);
         var registries = player.level().registryAccess();
-        Holder<Enchantment> fortune = registries.holderOrThrow(Enchantments.FORTUNE);
-        Holder<Enchantment> silk = registries.holderOrThrow(Enchantments.SILK_TOUCH);
+        Holder<Enchantment> fortune = registries.lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(Enchantments.FORTUNE);
+        Holder<Enchantment> silk = registries.lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(Enchantments.SILK_TOUCH);
         EnchantmentHelper.updateEnchantments(stack, enchantments -> {
             enchantments.set(fortune, config.fortune() ? 3 : 0);
             enchantments.set(silk, config.silkTouch() ? 1 : 0);

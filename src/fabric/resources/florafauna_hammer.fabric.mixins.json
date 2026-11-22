@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "package": "net.j40climb.florafauna_hammer.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "minVersion": "0.8",
+  "mixins": ["FabricHammerPlayerMixin"],
+  "injectors": { "defaultRequire": 1 }
+}

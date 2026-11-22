@@ -5,9 +5,7 @@ import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -21,19 +19,15 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.RegisterGameTestsEvent;
-import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
-import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 final class HammerSlamLifecycleGameTests {
     private static final InteractionHand HAND = InteractionHand.MAIN_HAND;
 
-    static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env) {
+    static void register(HammerGameTests.Registrar tests) {
         var mine = Identifier.fromNamespaceAndPath("florafauna", "test_hammer_mine");
-        HammerGameTests.registerStructureTest(event, env, "hammer_slam_lifecycle", mine, 100, HammerSlamLifecycleGameTests::lifecycle);
-        HammerGameTests.registerStructureTest(event, env, "hammer_slam_timeout", mine, 220, HammerSlamLifecycleGameTests::timeout);
-        HammerGameTests.registerStructureTest(event, env, "hammer_slam_players_and_falls", mine, 100, HammerSlamLifecycleGameTests::playersAndFalls);
+        HammerGameTests.registerStructureTest(tests, "hammer_slam_lifecycle", mine, 100, HammerSlamLifecycleGameTests::lifecycle);
+        HammerGameTests.registerStructureTest(tests, "hammer_slam_timeout", mine, 220, HammerSlamLifecycleGameTests::timeout);
+        HammerGameTests.registerStructureTest(tests, "hammer_slam_players_and_falls", mine, 100, HammerSlamLifecycleGameTests::playersAndFalls);
     }
 
     private static ServerPlayer start(GameTestHelper h) {
@@ -43,8 +37,8 @@ final class HammerSlamLifecycleGameTests {
     }
 
     private static void assertCanceled(GameTestHelper h, ServerPlayer player, String reason) {
-        NeoForge.EVENT_BUS.post(new PlayerTickEvent.Post(player));
-        h.assertTrue(!player.hasData(HammerRegistry.PENDING_SLAM), "Slam survived " + reason);
+        TestPlatform.tick(player);
+        h.assertTrue(HammerRegistry.pendingSlam(player) == null, "Slam survived " + reason);
     }
 
     private static void lifecycle(GameTestHelper h) {
@@ -65,7 +59,7 @@ final class HammerSlamLifecycleGameTests {
         var leaving = start(h);
         h.getLevel().addNewPlayer(leaving);
         h.getLevel().removePlayerImmediately(leaving, Entity.RemovalReason.UNLOADED_WITH_PLAYER);
-        h.assertTrue(!leaving.hasData(HammerRegistry.PENDING_SLAM), "Disconnect retained a pending slam");
+        h.assertTrue(HammerRegistry.pendingSlam(leaving) == null, "Disconnect retained a pending slam");
 
         var spectator = HammerPowerGameTests.airborne(h);
         spectator.setGameMode(GameType.SPECTATOR);
@@ -108,9 +102,9 @@ final class HammerSlamLifecycleGameTests {
 
     private static void playersAndFalls(GameTestHelper h) {
         var attacker = start(h);
-        var shortFall = NeoForge.EVENT_BUS.post(new LivingFallEvent(attacker, 1.25, 1));
-        var longFall = NeoForge.EVENT_BUS.post(new LivingFallEvent(attacker, 40, 1));
-        h.assertTrue(shortFall.getDistance() == 0 && longFall.getDistance() > 30, "Fall cushion lost short/high fall distinction");
+        var shortFall = TestPlatform.fallDistance(attacker, 1.25);
+        var longFall = TestPlatform.fallDistance(attacker, 40);
+        h.assertTrue(shortFall == 0 && longFall > 30, "Fall cushion lost short/high fall distinction");
         var witness = HammerPowerGameTests.airborne(h);
         //? if >=26.3 {
         /*witness.setPermanentlyInvulnerable(false);*/
@@ -132,7 +126,7 @@ final class HammerSlamLifecycleGameTests {
             var witnessMotion = witness.getDeltaMovement();
             attacker.setPos(Vec3.atBottomCenterOf(floor.above()));
             attacker.setOnGround(true);
-            NeoForge.EVENT_BUS.post(new PlayerTickEvent.Post(attacker));
+            TestPlatform.tick(attacker);
             h.assertTrue(hostile.getHealth() < enemyHealth && witness.getHealth() == witnessHealth
                     && witnessMotion.equals(witness.getDeltaMovement()), "Impact damaged or moved the neighboring player");
         } finally {

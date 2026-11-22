@@ -1,19 +1,21 @@
 # Hammer
 
-A standalone NeoForge mod for Minecraft 26.1 and 26.3, built with Java 25. Find the Hammer in Tools & Utilities or use `/give @s florafauna:hammer`. Existing Hammer items, ability components and projectiles keep their original identifiers. The split FloraFauna mod (0.0.2 or later) is optional.
+A standalone Fabric and NeoForge mod for Minecraft 26.1 and 26.3, built with Java 25. Install the Hammer jar for your Minecraft version and loader on the server and client. Fabric installations also need Fabric API. Find the Hammer in Tools & Utilities or use `/give @s florafauna:hammer`. Existing Hammer items, ability components and projectiles keep their original identifiers. The split FloraFauna mod (0.0.2 or later) is optional.
 
 ## Build and test
 
-Stonecutter builds both Minecraft versions from this checkout. The shared source is under `src/`, with 26.1 as the editable default. Each target has its own NeoForge version and build output.
+Stonecutter builds four targets from this checkout, with 26.1 NeoForge as the editable default. Gameplay and UI live in `src/main`. Loader entrypoints, event adapters, and loader-specific resources live in `src/fabric` and `src/neoforge`. ModDevGradle builds the NeoForge targets and Loom builds the Fabric targets.
 
 ```sh
+./gradlew :26.1-fabric:build :26.1-fabric:runGameTestServer
+./gradlew :26.3-fabric:build :26.3-fabric:runGameTestServer
 ./gradlew :26.1-neoforge:build :26.1-neoforge:runGameTestServer
 ./gradlew :26.3-neoforge:build :26.3-neoforge:runGameTestServer
 ```
 
-Use `gradlew.bat` on Windows. Pick the jar from `versions/<target>-neoforge/build/libs/` for the Minecraft version you play. To run a single server test, pass `-PgameTestFilter=florafauna_hammer:hammer_tunnel_gaps` to the version's GameTest task.
+Use `gradlew.bat` on Windows. Pick the matching jar from `versions/<minecraft>-<loader>/build/libs/` for the Minecraft version you play. To run a single server test, pass `-PgameTestFilter=florafauna_hammer:hammer_tunnel_gaps` to the version's GameTest task.
 
-For client checks, run `./scripts/test_hammer.ps1 -Target 26.1 -SourceWorld <closed-save-directory>` in PowerShell 7. Choose a save from the same Minecraft version. Both targets support the quarry and stair-outline scenarios. You can also select `-Scenario powers`, `radial`, or `progression`. Disposable saves, screenshots and logs are under `.tmp/world-playtests/`.
+For client checks, run `./scripts/test_hammer.ps1 -Target 26.1 -SourceWorld <closed-save-directory>` in PowerShell 7. Add `-Loader fabric` to run against Fabric. Choose a save from the same Minecraft version. Both targets support the quarry and stair-outline scenarios. You can also select `-Scenario powers`, `radial`, or `progression`. Disposable saves, screenshots and logs are under `.tmp/world-playtests/`.
 
 With FloraFauna's Stonecutter companion support, run `./gradlew -PdevMods=all :26.3-neoforge:runClient` from FloraFauna to play with all three mods. Use `:26.1-neoforge:runClient` for 26.1. Pass `-PhammerDir=<checkout>` and `-PfrenchiesDir=<checkout>` when using feature worktrees.
 
@@ -174,7 +176,7 @@ The `MULTI_TOOL_ABILITY` component enables tool modifications on right-click:
 
 **Priority**: Multi-tool actions take priority over `RIGHT_CLICK_ACTION`. If a block can be modified (stripped, pathed, or tilled), only that action occurs. Otherwise, the right-click ability executes.
 
-**Note**: The multi-tool ability requires the item to override `canPerformAction()` to declare support for the tool actions. Currently only `HammerItem` implements this - other items with the component will not perform tool modifications until they add the override.
+**Note**: On NeoForge 26.1, the multi-tool ability requires the item to override `canPerformAction()` to declare support for the tool actions. Currently only `HammerItem` implements this - other items with the component will not perform tool modifications until they add the override.
 
 ## Adding Abilities to Items
 
@@ -190,7 +192,7 @@ stack.set(HammerRegistry.MULTI_TOOL_ABILITY, MultiToolAbilityData.DEFAULT);
 
 ## Event Handlers
 
-Mining uses a server game-mode mixin for the completed center break. Other abilities use NeoForge events.
+Mining uses a server game-mode mixin for the completed center break. Other abilities use loader-specific events and mixins. The table lists the NeoForge hooks.
 
 | Event | Handler |
 |-------|---------|

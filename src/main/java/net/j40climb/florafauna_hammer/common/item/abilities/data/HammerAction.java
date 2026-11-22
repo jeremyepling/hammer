@@ -35,11 +35,11 @@ public enum HammerAction implements StringRepresentable {
         if (!HammerStage.of(tool).allows(this)) return false;
         return switch (this) {
             case AUTO -> true;
-            case STRIP, PATH, TILL -> !toolActions(tool.getOrDefault(HammerRegistry.MULTI_TOOL_ABILITY, MultiToolAbilityData.NONE))
+            case STRIP, PATH, TILL -> !toolActions(tool.getOrDefault(HammerRegistry.MULTI_TOOL_ABILITY.get(), MultiToolAbilityData.NONE))
                     .equals(MultiToolAbilityData.NONE);
-            case THROW -> tool.has(HammerRegistry.THROWABLE_ABILITY);
-            case LIGHTNING -> tool.has(HammerRegistry.LIGHTNING_ABILITY);
-            case TELEPORT -> tool.has(HammerRegistry.TELEPORT_SURFACE_ABILITY);
+            case THROW -> tool.has(HammerRegistry.THROWABLE_ABILITY.get());
+            case LIGHTNING -> tool.has(HammerRegistry.LIGHTNING_ABILITY.get());
+            case TELEPORT -> tool.has(HammerRegistry.TELEPORT_SURFACE_ABILITY.get());
             case SCAN -> tool.is(HammerRegistry.HAMMER.get());
         };
     }

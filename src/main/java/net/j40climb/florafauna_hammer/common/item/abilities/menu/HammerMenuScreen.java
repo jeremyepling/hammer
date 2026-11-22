@@ -28,7 +28,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 //? if <26.3 {
 import org.lwjgl.glfw.GLFW;
 //?} else {
@@ -68,9 +67,9 @@ public final class HammerMenuScreen extends Screen {
         this.slot = slot;
         tool = stack.copy();
         stage = HammerStage.of(stack);
-        mining = stack.has(HammerRegistry.MULTI_BLOCK_MINING) ? MiningModeData.effective(stack) : null;
-        action = stack.get(HammerRegistry.HAMMER_ACTION);
-        config = stack.get(HammerRegistry.TOOL_CONFIG);
+        mining = stack.has(HammerRegistry.MULTI_BLOCK_MINING.get()) ? MiningModeData.effective(stack) : null;
+        action = stack.get(HammerRegistry.HAMMER_ACTION.get());
+        config = stack.get(HammerRegistry.TOOL_CONFIG.get());
         if (config != null) config = config.withMiningSpeed(config.effectiveSpeed(stage));
         settingsOpen = action == null && config != null;
     }
@@ -126,7 +125,7 @@ public final class HammerMenuScreen extends Screen {
                 actionButtons.put(choice, slice);
                 details.put(slice, choice.label());
                 if (!stage.allows(choice)) hints.put(slice, requires(HammerStage.required(choice)));
-                if (choice == HammerAction.THROW && tool.is(HammerRegistry.HAMMER)) {
+                if (choice == HammerAction.THROW && tool.is(HammerRegistry.HAMMER.get())) {
                     hints.put(slice, label(stage == HammerStage.FORGED ? "throw_locked" : "charged_throw"));
                 }
             }
@@ -153,26 +152,26 @@ public final class HammerMenuScreen extends Screen {
     private void chooseShape(MiningShape shape) {
         mining = mining.withShape(shape);
         shapeButtons.forEach((candidate, button) -> button.setSelected(candidate == shape));
-        ClientPacketDistributor.sendToServer(new SelectMiningModePayload(slot, shape, false));
+        ClientSetup.sendToServer(new SelectMiningModePayload(slot, shape, false));
     }
 
     private void favorite(MiningShape shape) {
         mining = mining.toggleFavorite(shape);
         shapeButtons.get(shape).setFavorite(mining.isFavorite(shape));
-        ClientPacketDistributor.sendToServer(new SelectMiningModePayload(slot, shape, true));
+        ClientSetup.sendToServer(new SelectMiningModePayload(slot, shape, true));
     }
 
     private void chooseAction(HammerAction choice) {
         action = choice;
         actionButtons.forEach((candidate, button) -> button.setSelected(candidate == choice));
-        ClientPacketDistributor.sendToServer(new SelectHammerActionPayload(slot, choice));
+        ClientSetup.sendToServer(new SelectHammerActionPayload(slot, choice));
     }
 
     private RadialButton setting(String name, Item icon, Supplier<String> value, UnaryOperator<ToolConfig> change) {
         return wedge(rightWheel, 4, Component.translatable(CONFIG + value.get()), Component.translatable(CONFIG + name), icon, button -> {
             config = change.apply(config);
             button.setMessage(Component.translatable(CONFIG + value.get()));
-            ClientPacketDistributor.sendToServer(new UpdateToolConfigPayload(slot, config));
+            ClientSetup.sendToServer(new UpdateToolConfigPayload(slot, config));
         }, null);
     }
 
@@ -220,8 +219,8 @@ public final class HammerMenuScreen extends Screen {
     }
 
     private static Component requires(HammerStage required) {
-        var core = required == HammerStage.TEMPEST ? HammerRegistry.TEMPEST_CORE : HammerRegistry.RESONANCE_CORE;
-        return Component.translatable(MENU + "requires", core.toStack().getHoverName());
+        var core = required == HammerStage.TEMPEST ? HammerRegistry.TEMPEST_CORE.get() : HammerRegistry.RESONANCE_CORE.get();
+        return Component.translatable(MENU + "requires", core.getDefaultInstance().getHoverName());
     }
 
     private static Component label(String key) {
@@ -243,7 +242,7 @@ public final class HammerMenuScreen extends Screen {
         super.extractRenderState(g, mouseX, mouseY, partialTick);
         int headingY = cy - outer - 25;
         int detailY = cy + outer + 7;
-        if (tool.is(HammerRegistry.HAMMER)) g.centeredText(font, stage.label(), width / 2, headingY - 10, 0xfff4e9ff);
+        if (tool.is(HammerRegistry.HAMMER.get())) g.centeredText(font, stage.label(), width / 2, headingY - 10, 0xfff4e9ff);
         g.centeredText(font, label("mining"), leftX, headingY, 0xffffe1aa);
         g.centeredText(font, label(settingsOpen ? "settings" : "abilities"), rightX, headingY, 0xffffe1aa);
         if (mining != null) {
@@ -259,7 +258,7 @@ public final class HammerMenuScreen extends Screen {
         var release = Component.translatable(MENU + "release_hint", ClientSetup.CYCLE_MINING_MODE_KEY.get().getTranslatedKeyMessage());
         g.centeredText(font, hints.getOrDefault(pointed, release), rightX, detailY + 12, 0xffe1cbe9);
         Component detail = details.get(pointed);
-        if (detail == null && !settingsOpen && tool.is(HammerRegistry.HAMMER)) {
+        if (detail == null && !settingsOpen && tool.is(HammerRegistry.HAMMER.get())) {
             detail = label(stage == HammerStage.TEMPEST ? "slam" : "slam_locked");
         }
         if (detail != null) g.centeredText(font, detail, rightX, detailY, 0xfffbf0ff);

@@ -1,6 +1,5 @@
 package net.j40climb.florafauna_hammer.test;
 
-import com.mojang.authlib.GameProfile;
 import net.j40climb.florafauna_hammer.HammerMod;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningModeData;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
@@ -13,9 +12,7 @@ import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
@@ -35,43 +32,33 @@ import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.common.util.FakePlayer;
-import net.neoforged.neoforge.event.RegisterGameTestsEvent;
-import net.neoforged.neoforge.event.level.BlockEvent;
-//? if >=26.3 {
-/*import net.neoforged.neoforge.event.level.block.BreakBlockEvent;*/
-//?}
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
-import java.util.function.Consumer;
 
 final class HammerMiningGameTests {
     private static final Identifier MINE = Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "test_hammer_mine");
 
-    static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env) {
+    static void register(HammerGameTests.Registrar tests) {
         for (MiningShape mode : MiningShape.values()) {
             String name = "hammer_" + mode.getSerializedName() + "_all_faces";
-            HammerGameTests.registerStructureTest(event, env, name, MINE, 100, h -> allFaces(h, mode));
+            HammerGameTests.registerStructureTest(tests, name, MINE, 100, h -> allFaces(h, mode));
         }
-        HammerGameTests.registerStructureTest(event, env, "hammer_ore_drops", MINE, 100, HammerMiningGameTests::oreDrops);
-        HammerGameTests.registerStructureTest(event, env, "hammer_repeated_excavation", MINE, 100, HammerMiningGameTests::repeat);
-        HammerGameTests.registerStructureTest(event, env, "hammer_vein_limit_and_connectivity", MINE, 100, HammerMiningGameTests::vein);
-        HammerGameTests.registerStructureTest(event, env, "hammer_vein_material_pairs", MINE, 100, HammerMiningGameTests::veinMaterialPairs);
-        HammerGameTests.registerStructureTest(event, env, "hammer_vein_exact_and_boundaries", MINE, 100, HammerMiningGameTests::veinBoundaries);
-        HammerLightingGameTests.register(event, env, MINE);
-        HammerGameTests.registerStructureTest(event, env, "hammer_tunnel_gaps", MINE, 100, HammerMiningGameTests::gaps);
-        HammerGameTests.registerStructureTest(event, env, "hammer_stair_player_collision", MINE, 100, HammerMiningGameTests::stairPlayerCollision);
-        HammerGameTests.registerStructureTest(event, env, "hammer_stair_canceled_placement", MINE, 100, HammerMiningGameTests::stairCanceledPlacement);
-        HammerGameTests.registerStructureTest(event, env, "hammer_lava_exposure", MINE, 100, HammerMiningGameTests::lavaExposure);
-        HammerGameTests.registerStructureTest(event, env, "hammer_dimension_floor", MINE, 100, HammerMiningGameTests::buildFloor);
-        HammerGameTests.registerStructureTest(event, env, "hammer_single_is_per_tool", MINE, 100, HammerMiningGameTests::perToolMode);
-        HammerGameTests.registerStructureTest(event, env, "hammer_permission_and_tool_rules", MINE, 100, HammerMiningGameTests::eligibility);
+        HammerGameTests.registerStructureTest(tests, "hammer_ore_drops", MINE, 100, HammerMiningGameTests::oreDrops);
+        HammerGameTests.registerStructureTest(tests, "hammer_repeated_excavation", MINE, 100, HammerMiningGameTests::repeat);
+        HammerGameTests.registerStructureTest(tests, "hammer_vein_limit_and_connectivity", MINE, 100, HammerMiningGameTests::vein);
+        HammerGameTests.registerStructureTest(tests, "hammer_vein_material_pairs", MINE, 100, HammerMiningGameTests::veinMaterialPairs);
+        HammerGameTests.registerStructureTest(tests, "hammer_vein_exact_and_boundaries", MINE, 100, HammerMiningGameTests::veinBoundaries);
+        HammerLightingGameTests.register(tests, MINE);
+        HammerGameTests.registerStructureTest(tests, "hammer_tunnel_gaps", MINE, 100, HammerMiningGameTests::gaps);
+        HammerGameTests.registerStructureTest(tests, "hammer_stair_player_collision", MINE, 100, HammerMiningGameTests::stairPlayerCollision);
+        HammerGameTests.registerStructureTest(tests, "hammer_stair_canceled_placement", MINE, 100, HammerMiningGameTests::stairCanceledPlacement);
+        HammerGameTests.registerStructureTest(tests, "hammer_lava_exposure", MINE, 100, HammerMiningGameTests::lavaExposure);
+        HammerGameTests.registerStructureTest(tests, "hammer_dimension_floor", MINE, 100, HammerMiningGameTests::buildFloor);
+        HammerGameTests.registerStructureTest(tests, "hammer_single_is_per_tool", MINE, 100, HammerMiningGameTests::perToolMode);
+        HammerGameTests.registerStructureTest(tests, "hammer_permission_and_tool_rules", MINE, 100, HammerMiningGameTests::eligibility);
     }
 
     private static void lavaExposure(GameTestHelper h) {
@@ -109,7 +96,7 @@ final class HammerMiningGameTests {
         var precise = player(h, MiningShape.SINGLE);
         var other = player(h, MiningShape.TUNNEL_DOWN);
         var center = h.absolutePos(new BlockPos(11, 14, 11));
-        var originalMode = precise.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING);
+        var originalMode = precise.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get());
         fill(precise, center.offset(0, -6, -4), center.above(2), Blocks.STONE);
         swing(precise, center, Direction.SOUTH, Direction.NORTH);
         check(h, center, Blocks.AIR, "Single break");
@@ -118,7 +105,7 @@ final class HammerMiningGameTests {
         set(precise, center, Blocks.STONE);
         swing(other, center, Direction.SOUTH, Direction.NORTH);
         stair(h, center.below(2), Direction.SOUTH);
-        h.assertTrue(originalMode.equals(precise.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING)),
+        h.assertTrue(originalMode.equals(precise.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get())),
                 "Another player rewrote the selected Single mode");
         h.succeed();
     }
@@ -336,7 +323,7 @@ final class HammerMiningGameTests {
         check(h, center.east(2), Blocks.IRON_ORE, "variant cannot bridge exact blocks");
 
         UpdateToolConfigPayload.applyToHeldItem(player, ToolConfig.DEFAULT);
-        player.getMainHandItem().set(HammerRegistry.MULTI_BLOCK_MINING, new MiningModeData(MiningShape.SHAPELESS, 1, 2, true));
+        player.getMainHandItem().set(HammerRegistry.MULTI_BLOCK_MINING.get(), new MiningModeData(MiningShape.SHAPELESS, 1, 2, true));
         set(player, center, Blocks.IRON_ORE);
         swing(player, center, Direction.UP, Direction.NORTH);
         check(h, center, Blocks.AIR, "capped mixed vein center");
@@ -385,7 +372,7 @@ final class HammerMiningGameTests {
         // Custom components can request a smaller cap. Malformed legacy values still have bounded behavior.
         var bounded = new MiningModeData(MiningShape.SHAPELESS, Integer.MAX_VALUE, Integer.MAX_VALUE, true);
         if (bounded.radius() != 3 || bounded.maxBlocksToBreak() != 64) throw h.assertionException("Unbounded component");
-        player.getMainHandItem().set(HammerRegistry.MULTI_BLOCK_MINING, new MiningModeData(MiningShape.SHAPELESS, 1, 2, true));
+        player.getMainHandItem().set(HammerRegistry.MULTI_BLOCK_MINING.get(), new MiningModeData(MiningShape.SHAPELESS, 1, 2, true));
         fill(player, cap, cap.east(2), Blocks.IRON_ORE);
         swing(player, cap, Direction.UP, Direction.NORTH);
         check(h, cap.east(), Blocks.AIR, "custom second block");
@@ -456,7 +443,7 @@ final class HammerMiningGameTests {
         var miner = player(h, MiningShape.TUNNEL_DOWN);
         BlockPos center = prepareDescendingGap(h, miner);
         BlockPos occupied = center.east().below(3);
-        var occupant = new FakePlayer(h.getLevel(), new GameProfile(UUID.randomUUID(), "stair-occupant"));
+        var occupant = TestPlatform.player(h.getLevel(), "stair-occupant");
         occupant.setPos(Vec3.atBottomCenterOf(occupied));
         h.getLevel().addNewPlayer(occupant);
         try {
@@ -481,17 +468,15 @@ final class HammerMiningGameTests {
         level.setBlock(denied.north(), observer, Block.UPDATE_ALL);
         level.setBlock(allowed.north(), observer, Block.UPDATE_ALL);
         boolean[] attempted = {false};
-        Consumer<BlockEvent.EntityPlaceEvent> veto = e -> {
-            if (e.getEntity() == miner && e.getPos().equals(denied) && e.getPlacedBlock().is(Blocks.COBBLESTONE_STAIRS)) {
-                attempted[0] = true;
-                e.setCanceled(true);
-            }
-        };
-        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BlockEvent.EntityPlaceEvent.class, veto);
+        Runnable release = TestPlatform.vetoPlacement(miner, (position, block) -> {
+            if (!position.equals(denied) || block != Blocks.COBBLESTONE_STAIRS) return false;
+            attempted[0] = true;
+            return true;
+        });
         try {
             swing(miner, center, Direction.WEST, Direction.EAST);
         } finally {
-            NeoForge.EVENT_BUS.unregister(veto);
+            release.run();
         }
         h.assertTrue(attempted[0], "Placement hook must see the proposed gap stair");
         check(h, denied, Blocks.AIR, "vetoed tread");
@@ -511,40 +496,18 @@ final class HammerMiningGameTests {
         var player = player(h, MiningShape.FLAT_3X3);
         var center = h.absolutePos(new BlockPos(8, 12, 8));
         fill(player, center.offset(-1, -1, -1), center.offset(1, 1, 1), Blocks.STONE);
-        //? if >=26.3 {
-        /*Consumer<BreakBlockEvent> cancel = event -> {*/
-        //?} else {
-        Consumer<BlockEvent.BreakEvent> cancel = event -> {
-        //?}
-            if (event.getPlayer() == player && event.getPos().equals(center)) event.setCanceled(true);
-        };
-        //? if >=26.3 {
-        /*NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BreakBlockEvent.class, cancel);*/
-        //?} else {
-        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BlockEvent.BreakEvent.class, cancel);
-        //?}
+        Runnable releaseCenter = TestPlatform.vetoBreak(player, center::equals);
         try {
             swing(player, center, Direction.UP, Direction.NORTH);
         } finally {
-            NeoForge.EVENT_BUS.unregister(cancel);
+            releaseCenter.run();
         }
         for (BlockPos pos : BlockPos.betweenClosed(center.offset(-1, 0, -1), center.offset(1, 0, 1))) {
             check(h, pos, Blocks.STONE, "canceled center");
         }
 
         var protectedPos = center.west();
-        //? if >=26.3 {
-        /*Consumer<BreakBlockEvent> protect = event -> {*/
-        //?} else {
-        Consumer<BlockEvent.BreakEvent> protect = event -> {
-        //?}
-            if (event.getPlayer() == player && event.getPos().equals(protectedPos)) event.setCanceled(true);
-        };
-        //? if >=26.3 {
-        /*NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BreakBlockEvent.class, protect);*/
-        //?} else {
-        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BlockEvent.BreakEvent.class, protect);
-        //?}
+        Runnable releaseNeighbor = TestPlatform.vetoBreak(player, protectedPos::equals);
         var border = player.level().getWorldBorder();
         double x = border.getCenterX(), z = border.getCenterZ(), size = border.getSize();
         try {
@@ -554,7 +517,7 @@ final class HammerMiningGameTests {
         } finally {
             border.setCenter(x, z);
             border.setSize(size);
-            NeoForge.EVENT_BUS.unregister(protect);
+            releaseNeighbor.run();
         }
         check(h, protectedPos, Blocks.STONE, "canceled extra");
         check(h, center.east(), Blocks.STONE, "outside world border");
@@ -565,7 +528,7 @@ final class HammerMiningGameTests {
         var pick = new ItemStack(Items.DIAMOND_PICKAXE);
         player.setItemInHand(InteractionHand.MAIN_HAND, pick);
         for (boolean ignore : new boolean[]{false, true}) {
-            pick.set(HammerRegistry.MULTI_BLOCK_MINING, new MiningModeData(MiningShape.FLAT_3X3, 1, 64, ignore));
+            pick.set(HammerRegistry.MULTI_BLOCK_MINING.get(), new MiningModeData(MiningShape.FLAT_3X3, 1, 64, ignore));
             fill(player, center.offset(-1, 0, -1), center.offset(1, 0, 1), Blocks.STONE);
             set(player, center.west(), Blocks.OAK_LOG);
             set(player, center.south(), Blocks.BEDROCK);
@@ -579,7 +542,7 @@ final class HammerMiningGameTests {
     }
 
     static ServerPlayer player(GameTestHelper h, MiningShape mode) {
-        var player = new FakePlayer(h.getLevel(), new GameProfile(UUID.randomUUID(), "mining-test"));
+        var player = TestPlatform.player(h.getLevel(), "mining-test");
         player.setGameMode(GameType.CREATIVE);
         player.setItemInHand(InteractionHand.MAIN_HAND, HammerStage.TEMPEST.createStack());
         configure(player, mode);
@@ -587,7 +550,7 @@ final class HammerMiningGameTests {
     }
 
     static void configure(ServerPlayer player, MiningShape mode) {
-        player.getMainHandItem().set(HammerRegistry.MULTI_BLOCK_MINING, new MiningModeData(mode, mode.getRadius(), 64, true));
+        player.getMainHandItem().set(HammerRegistry.MULTI_BLOCK_MINING.get(), new MiningModeData(mode, mode.getRadius(), 64, true));
     }
 
     static void swing(ServerPlayer player, BlockPos target, Direction face, Direction heading) {

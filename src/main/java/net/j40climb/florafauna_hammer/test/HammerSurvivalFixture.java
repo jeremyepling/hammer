@@ -22,6 +22,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.core.registries.Registries;
 
 
 /** Shared by the server GameTest and the two-session Survival world rehearsal. */
@@ -41,8 +42,8 @@ public final class HammerSurvivalFixture {
                 null, Items.STICK, null);
         player.setItemInHand(InteractionHand.MAIN_HAND, hammer);
         hammer.set(DataComponents.CUSTOM_NAME, NAME);
-        hammer.set(HammerRegistry.MULTI_BLOCK_MINING, MODE);
-        hammer.set(HammerRegistry.HAMMER_ACTION, HammerAction.TILL);
+        hammer.set(HammerRegistry.MULTI_BLOCK_MINING.get(), MODE);
+        hammer.set(HammerRegistry.HAMMER_ACTION.get(), HammerAction.TILL);
         UpdateToolConfigPayload.applyToHeldItem(player, SETTINGS);
         checkTool(player, HammerStage.FORGED);
         check(HammerItem.charge(hammer) == 0, "Crafted Forged Hammer has active charge");
@@ -67,7 +68,7 @@ public final class HammerSurvivalFixture {
         place(player, table, SmithingMenu.ADDITIONAL_SLOT, core);
         table.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.PICKUP, player);
         ItemStack result = takeCursor(table);
-        check(result.getCount() == 1 && result.is(HammerRegistry.HAMMER), "Smithing did not yield one Hammer");
+        check(result.getCount() == 1 && result.is(HammerRegistry.HAMMER.get()), "Smithing did not yield one Hammer");
         for (int i = 0; i <= SmithingMenu.RESULT_SLOT; i++) {
             check(!table.getSlot(i).hasItem(), "Smithing left an input or duplicate result in slot " + i);
         }
@@ -79,14 +80,14 @@ public final class HammerSurvivalFixture {
 
     public static void checkTool(ServerPlayer player, HammerStage expected) {
         var hammer = player.getMainHandItem();
-        check(hammer.is(HammerRegistry.HAMMER) && hammer.getCount() == 1 && HammerStage.of(hammer) == expected,
+        check(hammer.is(HammerRegistry.HAMMER.get()) && hammer.getCount() == 1 && HammerStage.of(hammer) == expected,
                 "Missing single " + expected + " Hammer");
-        check(NAME.equals(hammer.get(DataComponents.CUSTOM_NAME)) && MODE.equals(hammer.get(HammerRegistry.MULTI_BLOCK_MINING))
-                && SETTINGS.equals(hammer.get(HammerRegistry.TOOL_CONFIG)) && HammerAction.TILL == hammer.get(HammerRegistry.HAMMER_ACTION)
-                && hammer.getEnchantments().getLevel(player.level().registryAccess().holderOrThrow(Enchantments.SILK_TOUCH)) == 1,
+        check(NAME.equals(hammer.get(DataComponents.CUSTOM_NAME)) && MODE.equals(hammer.get(HammerRegistry.MULTI_BLOCK_MINING.get()))
+                && SETTINGS.equals(hammer.get(HammerRegistry.TOOL_CONFIG.get())) && HammerAction.TILL == hammer.get(HammerRegistry.HAMMER_ACTION.get())
+                && hammer.getEnchantments().getLevel(player.level().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.SILK_TOUCH)) == 1,
                 "Lost the Hammer name, mining shape, favorites, settings, selected ability or enchantment at " + expected);
         int total = player.getInventory().getNonEquipmentItems().stream()
-                .filter(stack -> stack.is(HammerRegistry.HAMMER)).mapToInt(ItemStack::getCount).sum();
+                .filter(stack -> stack.is(HammerRegistry.HAMMER.get())).mapToInt(ItemStack::getCount).sum();
         check(total == 1, "Expected one owned Hammer after " + expected + ", found " + total);
     }
 

@@ -1,6 +1,5 @@
 package net.j40climb.florafauna_hammer.test;
 
-import com.mojang.authlib.GameProfile;
 import net.j40climb.florafauna_hammer.HammerMod;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningModeData;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
@@ -14,9 +13,7 @@ import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
@@ -32,33 +29,21 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.AABB;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.common.util.FakePlayer;
-import net.neoforged.neoforge.event.RegisterGameTestsEvent;
-import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
-import net.j40climb.florafauna_hammer.common.item.projectile.ThrownItemEntity;
-import net.neoforged.neoforge.event.level.BlockEvent;
-//? if >=26.3 {
-/*import net.neoforged.neoforge.event.level.block.BreakBlockEvent;*/
-//?}
 
-import java.util.UUID;
-import java.util.function.Consumer;
 
 final class ChargedHammerGameTests {
-    static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env) {
+    static void register(HammerGameTests.Registrar tests) {
         var mine = Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "test_hammer_mine");
-        HammerGameTests.registerStructureTest(event, env, "hammer_charged_ore_rules", mine, 100, ChargedHammerGameTests::oreRules);
-        HammerGameTests.registerStructureTest(event, env, "hammer_charged_first_surface", mine, 100, ChargedHammerGameTests::firstSurface);
-        HammerGameTests.registerStructureTest(event, env, "hammer_charged_permissions", mine, 100, ChargedHammerGameTests::permissions);
-        HammerGameTests.registerStructureTest(event, env, "hammer_charged_survival_reload", mine, 100, h -> flight(h, false));
-        HammerGameTests.registerStructureTest(event, env, "hammer_charged_creative_reload", mine, 100, h -> flight(h, true));
-        HammerGameTests.registerStructureTest(event, env, "hammer_charged_tap_and_recharge", mine, 100, ChargedHammerGameTests::tap);
+        HammerGameTests.registerStructureTest(tests, "hammer_charged_ore_rules", mine, 100, ChargedHammerGameTests::oreRules);
+        HammerGameTests.registerStructureTest(tests, "hammer_charged_first_surface", mine, 100, ChargedHammerGameTests::firstSurface);
+        HammerGameTests.registerStructureTest(tests, "hammer_charged_permissions", mine, 100, ChargedHammerGameTests::permissions);
+        HammerGameTests.registerStructureTest(tests, "hammer_charged_survival_reload", mine, 100, h -> flight(h, false));
+        HammerGameTests.registerStructureTest(tests, "hammer_charged_creative_reload", mine, 100, h -> flight(h, true));
+        HammerGameTests.registerStructureTest(tests, "hammer_charged_tap_and_recharge", mine, 100, ChargedHammerGameTests::tap);
     }
 
     private static ServerPlayer player(GameTestHelper h, boolean creative) {
-        var p = new FakePlayer(h.getLevel(), new GameProfile(UUID.randomUUID(), "charge-test"));
+        var p = TestPlatform.player(h.getLevel(), "charge-test");
         p.setGameMode(creative ? GameType.CREATIVE : GameType.SURVIVAL);
         p.setItemInHand(InteractionHand.MAIN_HAND, HammerStage.RESONANT.createStack());
         return p;
@@ -73,7 +58,7 @@ final class ChargedHammerGameTests {
             var p = player(h, false);
             var hammer = p.getMainHandItem();
             UpdateToolConfigPayload.applyToHeldItem(p, new ToolConfig(false, true, MiningSpeed.STANDARD, exact));
-            hammer.set(HammerRegistry.MULTI_BLOCK_MINING, new MiningModeData(MiningShape.SINGLE, 0, 2, true));
+            hammer.set(HammerRegistry.MULTI_BLOCK_MINING.get(), new MiningModeData(MiningShape.SINGLE, 0, 2, true));
             var selected = new ItemStack(Items.STICK, 5);
             p.setItemInHand(InteractionHand.MAIN_HAND, selected);
             var center = h.absolutePos(new BlockPos(4, 6, exact ? 14 : 4));
@@ -99,54 +84,32 @@ final class ChargedHammerGameTests {
     private static void permissions(GameTestHelper h) {
         var p = player(h, false);
         var hammer = p.getMainHandItem();
-        hammer.set(HammerRegistry.HAMMER_CHARGE, 1);
+        hammer.set(HammerRegistry.HAMMER_CHARGE.get(), 1);
         var center = h.absolutePos(new BlockPos(6, 8, 8));
         rock(p, center, Blocks.DIAMOND_ORE);
         rock(p, center.east(), Blocks.DIAMOND_ORE);
         rock(p, center.west(), Blocks.DIAMOND_ORE);
         var held = new ItemStack(Items.STONE);
         p.setItemInHand(InteractionHand.MAIN_HAND, held);
-        //? if >=26.3 {
-        /*Consumer<BreakBlockEvent> reject = event -> {*/
-        //?} else {
-        Consumer<BlockEvent.BreakEvent> reject = event -> {
-        //?}
-            if (event.getPlayer() == p) {
-                h.assertTrue(event.getPlayer().getMainHandItem() == hammer, "Break hook saw the wrong tool");
-                event.setCanceled(true);
-            }
-        };
-        //? if >=26.3 {
-        /*NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BreakBlockEvent.class, reject);*/
-        //?} else {
-        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BlockEvent.BreakEvent.class, reject);
-        //?}
+        Runnable releaseCenter = TestPlatform.vetoBreak(p, position -> {
+            h.assertTrue(p.getMainHandItem() == hammer, "Break hook saw the wrong tool");
+            return true;
+        });
         try {
             RemoteOreStrike.hit(p, hammer, center);
         } finally {
-            NeoForge.EVENT_BUS.unregister(reject);
+            releaseCenter.run();
         }
         h.assertTrue(p.getMainHandItem() == held && HammerItem.charge(hammer) == 1 && !p.level().isEmptyBlock(center)
                 && !p.level().isEmptyBlock(center.east()) && !p.level().isEmptyBlock(center.west()), "Denied center should do nothing");
         // A denied neighbor must leave charge available for another target.
-        hammer.set(HammerRegistry.HAMMER_CHARGE, 2);
+        hammer.set(HammerRegistry.HAMMER_CHARGE.get(), 2);
         rock(p, center.east(2), Blocks.DIAMOND_ORE);
-        //? if >=26.3 {
-        /*Consumer<BreakBlockEvent> rejectWest = event -> {*/
-        //?} else {
-        Consumer<BlockEvent.BreakEvent> rejectWest = event -> {
-        //?}
-            if (event.getPlayer() == p && event.getPos().equals(center.west())) event.setCanceled(true);
-        };
-        //? if >=26.3 {
-        /*NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BreakBlockEvent.class, rejectWest);*/
-        //?} else {
-        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BlockEvent.BreakEvent.class, rejectWest);
-        //?}
+        Runnable releaseNeighbor = TestPlatform.vetoBreak(p, center.west()::equals);
         try {
             RemoteOreStrike.hit(p, hammer, center);
         } finally {
-            NeoForge.EVENT_BUS.unregister(rejectWest);
+            releaseNeighbor.run();
         }
         h.assertTrue(HammerItem.charge(hammer) == 0 && p.level().isEmptyBlock(center) && p.level().isEmptyBlock(center.east())
                 && !p.level().isEmptyBlock(center.west()) && !p.level().isEmptyBlock(center.east(2)), "Protected block or charge limit ignored");
@@ -205,17 +168,12 @@ final class ChargedHammerGameTests {
         var original = p.getMainHandItem();
         ChargedThrowPayload.key(p, ChargedThrowPayload.PRESS);
         h.runAfterDelay(ChargedThrowPayload.HOLD_TICKS + 1, () -> {
-            Consumer<EntityJoinLevelEvent> deny = event -> {
-                if (event.getEntity() instanceof ThrownItemEntity e && e.getOwner() == p) event.setCanceled(true);
-            };
-            NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, EntityJoinLevelEvent.class, deny);
-            try {
-                ChargedThrowPayload.key(p, ChargedThrowPayload.RELEASE);
-            } finally {
-                NeoForge.EVENT_BUS.unregister(deny);
-            }
+            // NeoForge's spawn veto is a separate loader-specific regression.
+            //? if neoforge {
+            TestPlatform.withRejectedThrow(p, () -> ChargedThrowPayload.key(p, ChargedThrowPayload.RELEASE));
             h.assertTrue(p.getMainHandItem() == original && original.getCount() == 1 && HammerItem.charge(original) == 64,
                     "Rejected charged projectile consumed the Hammer or its charge");
+            //?}
             ChargedThrowPayload.key(p, ChargedThrowPayload.PRESS);
             h.runAfterDelay(ChargedThrowPayload.HOLD_TICKS + 1, () -> {
                 ChargedThrowPayload.key(p, ChargedThrowPayload.RELEASE);
@@ -237,7 +195,7 @@ final class ChargedHammerGameTests {
         rock(p, center, Blocks.DIAMOND_ORE);
         p.setPos(Vec3.atCenterOf(center.north(4)));
         var hammer = p.getMainHandItem();
-        hammer.set(HammerRegistry.HAMMER_CHARGE, 40);
+        hammer.set(HammerRegistry.HAMMER_CHARGE.get(), 40);
         for (int tick = 1; tick <= 20; tick++) {
             p.tickCount = tick;
             hammer.getItem().inventoryTick(hammer, p.level(), p, EquipmentSlot.MAINHAND);

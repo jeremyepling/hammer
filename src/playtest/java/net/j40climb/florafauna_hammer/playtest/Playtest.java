@@ -16,10 +16,6 @@ import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.storage.LevelResource;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -35,7 +31,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 /** Drives one real client and its integrated server. Only loaded by the playtest run. */
-@EventBusSubscriber(modid = HammerMod.MOD_ID, value = Dist.CLIENT)
 public final class Playtest {
     private static final Logger LOG = LogUtils.getLogger();
     private static final long TIMEOUT = Duration.ofSeconds(35).toNanos();
@@ -179,8 +174,7 @@ public final class Playtest {
         if (!condition) throw new AssertionError(message);
     }
 
-    @SubscribeEvent
-    public static void tick(ClientTickEvent.Post event) {
+    static void tick() {
         String path = System.getProperty("florafauna.playtest.directory");
         if (path == null) return;
         Minecraft mc = Minecraft.getInstance();

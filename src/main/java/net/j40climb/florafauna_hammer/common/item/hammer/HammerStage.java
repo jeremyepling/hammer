@@ -41,13 +41,13 @@ public enum HammerStage implements StringRepresentable {
     /** Component-enabled tools from other mods keep unrestricted access to their own components. */
     public static HammerStage of(ItemStack stack) {
         return stack.getItem() instanceof HammerItem
-                ? stack.getOrDefault(HammerRegistry.HAMMER_STAGE, FORGED) : TEMPEST;
+                ? stack.getOrDefault(HammerRegistry.HAMMER_STAGE.get(), FORGED) : TEMPEST;
     }
 
     public ItemStack createStack() {
         ItemStack stack = new ItemStack(HammerRegistry.HAMMER.get());
-        stack.set(HammerRegistry.HAMMER_STAGE, this);
-        if (capacity > 0) stack.set(HammerRegistry.HAMMER_CHARGE, capacity);
+        stack.set(HammerRegistry.HAMMER_STAGE.get(), this);
+        if (capacity > 0) stack.set(HammerRegistry.HAMMER_CHARGE.get(), capacity);
         return stack;
     }
 

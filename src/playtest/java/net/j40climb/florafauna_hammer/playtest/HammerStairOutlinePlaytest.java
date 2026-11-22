@@ -1,5 +1,6 @@
 package net.j40climb.florafauna_hammer.playtest;
 
+import net.j40climb.florafauna_hammer.setup.ClientSetup;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningModeData;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningSpeed;
@@ -36,19 +37,19 @@ final class HammerStairOutlinePlaytest {
             p.level().setBlockAndUpdate(WALL.north(3).below(), Blocks.STONE.defaultBlockState());
             p.level().setBlockAndUpdate(WALL, Blocks.DEEPSLATE.defaultBlockState());
             var hammer = new ItemStack(HammerRegistry.HAMMER.get());
-            hammer.set(HammerRegistry.MULTI_BLOCK_MINING, new MiningModeData(MiningShape.TUNNEL_DOWN, 0, 64, true));
-            hammer.set(HammerRegistry.TOOL_CONFIG, new ToolConfig(true, false, MiningSpeed.STANDARD));
+            hammer.set(HammerRegistry.MULTI_BLOCK_MINING.get(), new MiningModeData(MiningShape.TUNNEL_DOWN, 0, 64, true));
+            hammer.set(HammerRegistry.TOOL_CONFIG.get(), new ToolConfig(true, false, MiningSpeed.STANDARD));
             p.getInventory().setSelectedSlot(0);
             p.getInventory().setItem(0, hammer);
             p.teleportTo(p.level(), 0.5, 202, 0.5, Set.of(), 0f, 20f, true);
             p.inventoryMenu.broadcastChanges();
         });
         t.awaitClient("Aim at the north face with the descending Hammer", mc -> {
-            var mode = mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING);
+            var mode = mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get());
             return mode != null && mode.shape() == MiningShape.TUNNEL_DOWN && aimedAt(mc, Direction.NORTH);
         });
         t.client("Begin the north-face swing using the attack key", mc -> {
-            KeyMapping.click(mc.options.keyAttack.getKey());
+            KeyMapping.click(ClientSetup.boundKey(mc.options.keyAttack));
             mc.options.keyAttack.setDown(true);
         });
         t.awaitClient("Aim up at the top face while still mining the same block", mc -> {

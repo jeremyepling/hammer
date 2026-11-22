@@ -19,7 +19,7 @@ final class HammerRadialPlaytest {
 
     static void steps(Playtest t) {
         t.server("Equip a fresh Hammer in the test plot", HammerPlaytest::prepare);
-        t.awaitClient("Receive the Hammer", mc -> mc.player.getMainHandItem().is(HammerRegistry.HAMMER));
+        t.awaitClient("Receive the Hammer", mc -> mc.player.getMainHandItem().is(HammerRegistry.HAMMER.get()));
         HammerPlaytest.openMenu(t);
         t.client("Verify ten mining choices on the left and eight abilities on the right", HammerRadialPlaytest::checkBothWheels);
         t.client("Releasing the default C key leaves the remapped V hold active", mc -> {
@@ -32,14 +32,14 @@ final class HammerRadialPlaytest {
             clickOuterSector(mc, wedge, HammerPlaytest.button(mc, CommonComponents.GUI_DONE));
         });
         t.awaitServer("Apply the left wedge before touching the right wheel", p ->
-                p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.WALKABLE_TUNNEL);
+                p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == MiningShape.WALKABLE_TUNNEL);
         t.client("Select Scan directly on the right wheel", mc -> {
             checkBothWheels(mc);
             HammerPlaytest.click(mc, HammerPlaytest.button(mc, actionLabel(HammerAction.SCAN)));
         });
         t.awaitServer("Keep the selected mining shape while setting the grounded ability", p ->
-                p.getMainHandItem().get(HammerRegistry.HAMMER_ACTION) == HammerAction.SCAN
-                        && p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.WALKABLE_TUNNEL);
+                p.getMainHandItem().get(HammerRegistry.HAMMER_ACTION.get()) == HammerAction.SCAN
+                        && p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == MiningShape.WALKABLE_TUNNEL);
         releaseOver(t, "mining then ability", actionLabel(HammerAction.THROW), MiningShape.WALKABLE_TUNNEL, HammerAction.SCAN);
 
         HammerPlaytest.openMenu(t);
@@ -62,23 +62,23 @@ final class HammerRadialPlaytest {
         HammerPlaytest.openMenu(t);
         t.client("Right-click Walkable to favorite it", mc -> favorite(mc, MiningShape.WALKABLE_TUNNEL));
         t.awaitServer("A secondary click favorites Walkable and preserves the selected mode", p -> {
-            var mode = p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING);
+            var mode = p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get());
             return mode.shape() == MiningShape.WALKABLE_TUNNEL && mode.isFavorite(MiningShape.WALKABLE_TUNNEL);
         });
         t.client("Left-click Walkable", mc -> select(mc, "shape.walkable_tunnel"));
         t.awaitServer("Persist Walkable as the mining shape", p ->
-                p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.WALKABLE_TUNNEL);
+                p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == MiningShape.WALKABLE_TUNNEL);
         t.client("Move keyboard focus clockwise and favorite the focused Large wedge", mc -> {
             key(mc, InputConstants.KEY_RIGHT);
             key(mc, InputConstants.KEY_F);
         });
         t.awaitServer("F favorites Large without switching the selected shape", p -> {
-            var mode = p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING);
+            var mode = p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get());
             return mode.shape() == MiningShape.WALKABLE_TUNNEL && mode.isFavorite(MiningShape.LARGE_TUNNEL);
         });
         t.client("Apply the focused Large wedge with Enter", mc -> key(mc, InputConstants.KEY_RETURN));
         t.awaitServer("Persist Large Tunnel from the keyboard", p ->
-                p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.LARGE_TUNNEL);
+                p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == MiningShape.LARGE_TUNNEL);
         t.screenshot("hammer-wheels-selected");
         t.client("Open settings from the right hub", mc -> select(mc, "settings"));
         t.screenshot("hammer-wheels-settings");
@@ -87,9 +87,9 @@ final class HammerRadialPlaytest {
                 Component.translatable("gui.florafauna.tool_config.speed.efficiency"))));
         t.awaitServer("Keep Bore, Scan and Instabreak together", p -> {
             var tool = p.getMainHandItem();
-            return tool.get(HammerRegistry.TOOL_CONFIG).miningSpeed() == MiningSpeed.INSTABREAK
-                    && tool.get(HammerRegistry.HAMMER_ACTION) == HammerAction.SCAN
-                    && tool.get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.BORE;
+            return tool.get(HammerRegistry.TOOL_CONFIG.get()).miningSpeed() == MiningSpeed.INSTABREAK
+                    && tool.get(HammerRegistry.HAMMER_ACTION.get()) == HammerAction.SCAN
+                    && tool.get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == MiningShape.BORE;
         });
         t.client("Backspace restores the eight right-hand abilities", mc -> {
             key(mc, InputConstants.KEY_BACKSPACE);
@@ -105,7 +105,7 @@ final class HammerRadialPlaytest {
         t.client("Keep all choices on their own side in the narrow layout", HammerRadialPlaytest::checkBothWheels);
         t.screenshot("hammer-wheels-narrow");
         t.client("Select Throw at narrow width", mc -> HammerPlaytest.click(mc, HammerPlaytest.button(mc, actionLabel(HammerAction.THROW))));
-        t.awaitServer("Apply Throw from the narrow right wheel", p -> p.getMainHandItem().get(HammerRegistry.HAMMER_ACTION) == HammerAction.THROW);
+        t.awaitServer("Apply Throw from the narrow right wheel", p -> p.getMainHandItem().get(HammerRegistry.HAMMER_ACTION.get()) == HammerAction.THROW);
         releaseOver(t, "narrow layout", shapeLabel(MiningShape.SINGLE), MiningShape.BORE, HammerAction.THROW);
     }
 
@@ -123,8 +123,8 @@ final class HammerRadialPlaytest {
         });
         t.server("Preserve exactly the clicked choices after " + gesture, player -> {
             var tool = player.getMainHandItem();
-            var actualShape = tool.get(HammerRegistry.MULTI_BLOCK_MINING).shape();
-            var actualAction = tool.get(HammerRegistry.HAMMER_ACTION);
+            var actualShape = tool.get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape();
+            var actualAction = tool.get(HammerRegistry.HAMMER_ACTION.get());
             Playtest.require(actualShape == shape && actualAction == action,
                     gesture + " expected " + shape + "/" + action + ", got " + actualShape + "/" + actualAction);
         });

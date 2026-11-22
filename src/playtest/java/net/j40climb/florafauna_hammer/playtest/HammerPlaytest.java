@@ -21,6 +21,7 @@ import net.minecraft.client.input.MouseButtonInfo;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -33,15 +34,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ExtractLevelRenderStateEvent;
 
 import java.util.HashSet;
 import java.util.Set;
 
-@EventBusSubscriber(modid = HammerMod.MOD_ID, value = Dist.CLIENT)
 public final class HammerPlaytest {
     private static final BlockPos WALL = new BlockPos(0, 202, 3);
     private static final BlockPos FLOOR = new BlockPos(0, 200, 0);
@@ -50,14 +46,12 @@ public final class HammerPlaytest {
     private static final Set<BlockPos> cracks = new HashSet<>();
 
     // LevelRenderer resets this state at the end of each frame, before the playtest's next client tick.
-    @SubscribeEvent
-    public static void captureOutline(ExtractLevelRenderStateEvent event) {
+    static void captureOutline(net.minecraft.client.renderer.state.level.LevelRenderState state, BlockPos hammerOutline) {
         if (observingCracks) {
             cracks.clear();
-            event.getRenderState().blockBreakingRenderStates.forEach(state -> cracks.add(state.blockPos()));
+            state.blockBreakingRenderStates.forEach(crack -> cracks.add(crack.blockPos()));
         }
-        var outline = event.getRenderState().blockOutlineRenderState;
-        lastCustomOutline = outline != null && !outline.customRenderers().isEmpty() ? outline.pos() : null;
+        lastCustomOutline = hammerOutline;
     }
 
     static void steps(Playtest t, int phase) {
@@ -83,17 +77,17 @@ public final class HammerPlaytest {
             releaseWheel(mc);
         });
         t.awaitServer("Receive the speed update on the server", p ->
-                p.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).miningSpeed() == MiningSpeed.INSTABREAK);
+                p.getMainHandItem().get(HammerRegistry.TOOL_CONFIG.get()).miningSpeed() == MiningSpeed.INSTABREAK);
         t.awaitClient("Synchronize the server's tool configuration back to the client", mc ->
-                mc.player.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).miningSpeed() == MiningSpeed.INSTABREAK);
+                mc.player.getMainHandItem().get(HammerRegistry.TOOL_CONFIG.get()).miningSpeed() == MiningSpeed.INSTABREAK);
         openSettings(t);
         t.client("Verify the persisted speed label and release the menu key", mc -> {
             configButton(mc, "speed.instabreak");
             releaseWheel(mc);
         });
-        t.client("Tap the mapped mining key", mc -> KeyMapping.click(ClientSetup.CYCLE_MINING_MODE_KEY.get().getKey()));
+        t.client("Tap the mapped mining key", mc -> KeyMapping.click(ClientSetup.boundKey(ClientSetup.CYCLE_MINING_MODE_KEY.get())));
         t.awaitServer("Select flat 3×3 mining on the server", p ->
-                p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.FLAT_3X3);
+                p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == MiningShape.FLAT_3X3);
 
         setVeinPreference(t, true);
         setVeinPreference(t, false);
@@ -121,7 +115,7 @@ public final class HammerPlaytest {
         var woodZ = Blocks.BIRCH_WOOD.defaultBlockState().setValue(RotatedPillarBlock.AXIS, Direction.Axis.Z);
         var strippedWoodZ = Blocks.STRIPPED_BIRCH_WOOD.defaultBlockState().setValue(RotatedPillarBlock.AXIS, Direction.Axis.Z);
         t.server("Configure mining-mode cycling as the fallback right-click action", p -> {
-            p.getMainHandItem().set(HammerRegistry.RIGHT_CLICK_ACTION, new RightClickAction(HammerRegistry.MULTI_BLOCK_MINING.getId()));
+            p.getMainHandItem().set(HammerRegistry.RIGHT_CLICK_ACTION.get(), new RightClickAction(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(HammerRegistry.MULTI_BLOCK_MINING.get())));
             p.inventoryMenu.broadcastChanges();
         });
         // With stripping disabled, cycling from 3x3 to 5x5 acknowledges that the server handled the click.
@@ -147,9 +141,9 @@ public final class HammerPlaytest {
             releaseWheel(mc);
         });
         t.awaitServer("Save vein matching " + next + " on the held hammer", p ->
-                p.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).exactVein() == exact);
+                p.getMainHandItem().get(HammerRegistry.TOOL_CONFIG.get()).exactVein() == exact);
         t.awaitClient("Synchronize vein matching " + next + " to the client", mc ->
-                mc.player.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).exactVein() == exact);
+                mc.player.getMainHandItem().get(HammerRegistry.TOOL_CONFIG.get()).exactVein() == exact);
     }
 
     private static void setLighting(Playtest t, boolean enable) {
@@ -162,18 +156,18 @@ public final class HammerPlaytest {
             releaseWheel(mc);
         });
         t.awaitServer("Save auto torches " + next + " on the held Hammer", p ->
-                p.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).tunnelLighting() == enable);
+                p.getMainHandItem().get(HammerRegistry.TOOL_CONFIG.get()).tunnelLighting() == enable);
         t.awaitClient("Sync auto torches " + next + " to the client", mc ->
-                mc.player.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).tunnelLighting() == enable);
+                mc.player.getMainHandItem().get(HammerRegistry.TOOL_CONFIG.get()).tunnelLighting() == enable);
     }
 
     private static void interruptSwing(Playtest t) {
         t.server("Prepare a Standard-speed swing on the 3×3 stone wall", p -> setSpeed(p, MiningSpeed.STANDARD));
         t.awaitClient("Aim at the wall with Standard speed selected", mc -> aimedAt(mc, WALL, Direction.NORTH)
-                && mc.player.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).miningSpeed() == MiningSpeed.STANDARD);
+                && mc.player.getMainHandItem().get(HammerRegistry.TOOL_CONFIG.get()).miningSpeed() == MiningSpeed.STANDARD);
         t.client("Hold attack to begin mining", mc -> {
             observingCracks = true;
-            KeyMapping.click(mc.options.keyAttack.getKey());
+            KeyMapping.click(ClientSetup.boundKey(mc.options.keyAttack));
             mc.options.keyAttack.setDown(true);
         });
         Set<BlockPos> expected = new HashSet<>();
@@ -191,11 +185,11 @@ public final class HammerPlaytest {
             setSpeed(p, MiningSpeed.INSTABREAK);
         });
         t.awaitClient("Receive Instabreak before the completed wall strike", mc ->
-                mc.player.getMainHandItem().get(HammerRegistry.TOOL_CONFIG).miningSpeed() == MiningSpeed.INSTABREAK);
+                mc.player.getMainHandItem().get(HammerRegistry.TOOL_CONFIG.get()).miningSpeed() == MiningSpeed.INSTABREAK);
     }
 
     private static void setSpeed(ServerPlayer player, MiningSpeed speed) {
-        var config = player.getMainHandItem().get(HammerRegistry.TOOL_CONFIG);
+        var config = player.getMainHandItem().get(HammerRegistry.TOOL_CONFIG.get());
         UpdateToolConfigPayload.applyToHeldItem(player, config.withMiningSpeed(speed));
         player.inventoryMenu.broadcastChanges();
     }
@@ -204,18 +198,18 @@ public final class HammerPlaytest {
         t.server("Set up: " + label, p -> {
             p.level().setBlockAndUpdate(WALL.above(), Blocks.AIR.defaultBlockState());
             p.level().setBlockAndUpdate(WALL, before);
-            p.getMainHandItem().set(HammerRegistry.MULTI_TOOL_ABILITY, modes);
+            p.getMainHandItem().set(HammerRegistry.MULTI_TOOL_ABILITY.get(), modes);
             p.inventoryMenu.broadcastChanges();
         });
         t.awaitClient("Receive the target and hammer modes: " + label, mc -> aimedAt(mc, WALL, Direction.NORTH)
                 && mc.level.getBlockState(WALL).equals(before)
-                && modes.equals(mc.player.getMainHandItem().get(HammerRegistry.MULTI_TOOL_ABILITY)));
+                && modes.equals(mc.player.getMainHandItem().get(HammerRegistry.MULTI_TOOL_ABILITY.get())));
         t.client("Use the hammer: " + label, mc ->
                 mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, (BlockHitResult) mc.hitResult));
         t.awaitServer(label, p -> p.level().getBlockState(WALL).equals(after) && p.getMainHandItem().is(HammerRegistry.HAMMER.get())
-                && p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.FLAT_5X5);
+                && p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == MiningShape.FLAT_5X5);
         t.awaitClient("See the resulting block and mining mode: " + label, mc -> mc.level.getBlockState(WALL).equals(after)
-                && mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.FLAT_5X5);
+                && mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == MiningShape.FLAT_5X5);
     }
 
     static void prepare(ServerPlayer player) {
@@ -242,7 +236,7 @@ public final class HammerPlaytest {
 
     static void openMenu(Playtest t) {
         t.client("Hold the mapped Hammer control to open both wheels", mc -> {
-            var key = ClientSetup.CYCLE_MINING_MODE_KEY.get().getKey();
+            var key = ClientSetup.boundKey(ClientSetup.CYCLE_MINING_MODE_KEY.get());
             KeyMapping.set(key, true);
             KeyMapping.click(key);
         });
@@ -250,7 +244,7 @@ public final class HammerPlaytest {
     }
 
     static void releaseWheel(Minecraft mc) {
-        var mapped = ClientSetup.CYCLE_MINING_MODE_KEY.get().getKey();
+        var mapped = ClientSetup.boundKey(ClientSetup.CYCLE_MINING_MODE_KEY.get());
         Playtest.require(Playtest.screen(mc) instanceof HammerMenuScreen, "Hammer wheel closed before releasing the bound key");
         // A screen receives the physical key-up even when opening it cleared the game's key mappings.
         Playtest.require(Playtest.screen(mc).keyReleased(new KeyEvent(mapped.getValue(), 0, 0)), "Wheel ignored the mapped release");

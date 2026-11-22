@@ -15,6 +15,7 @@ import net.minecraft.client.gui.render.TextureSetup;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.MouseButtonInfo;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.j40climb.florafauna_hammer.setup.ClientSetup;
 import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -95,7 +96,7 @@ final class RadialButton extends Button {
         var pose = new Matrix3x2f(gui.pose());
         var bounds = new ScreenRectangle(cx - outer, cy - outer, outer * 2, outer * 2).transformMaxBounds(pose);
         double gap = 0.9 / ((outer + inner) * 0.5);
-        gui.submitGuiElementRenderState(new Sector(pose, bounds, cx, cy, inner, outer,
+        ClientSetup.submit(gui, new Sector(pose, bounds, cx, cy, inner, outer,
                 direction - halfAngle + gap, direction + halfAngle - gap, face, rim));
 
         var font = Minecraft.getInstance().font;
@@ -134,7 +135,7 @@ final class RadialButton extends Button {
     static void drawHub(GuiGraphicsExtractor gui, int cx, int cy, int radius, int face, int rim) {
         var pose = new Matrix3x2f(gui.pose());
         var bounds = new ScreenRectangle(cx - radius, cy - radius, radius * 2, radius * 2).transformMaxBounds(pose);
-        gui.submitGuiElementRenderState(new Sector(pose, bounds, cx, cy, 0, radius, 0, Math.TAU, face, rim));
+        ClientSetup.submit(gui, new Sector(pose, bounds, cx, cy, 0, radius, 0, Math.TAU, face, rim));
     }
 
     private record Sector(Matrix3x2fc pose, ScreenRectangle bounds, int cx, int cy, int inner, int outer,

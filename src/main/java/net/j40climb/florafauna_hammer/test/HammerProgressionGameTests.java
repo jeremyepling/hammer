@@ -14,24 +14,21 @@ import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
-import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 
 import java.util.EnumSet;
 
 final class HammerProgressionGameTests {
     private static final InteractionHand HAND = InteractionHand.MAIN_HAND;
 
-    static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env) {
-        HammerGameTests.registerTest(event, env, "hammer_progression_recipes", HammerProgressionGameTests::recipes);
-        HammerGameTests.registerTest(event, env, "hammer_progression_locks", HammerProgressionGameTests::locks);
-        HammerGameTests.registerTest(event, env, "hammer_progression_forged_throw", HammerProgressionGameTests::forgedThrow);
+    static void register(HammerGameTests.Registrar tests) {
+        HammerGameTests.registerTest(tests, "hammer_progression_recipes", HammerProgressionGameTests::recipes);
+        HammerGameTests.registerTest(tests, "hammer_progression_locks", HammerProgressionGameTests::locks);
+        HammerGameTests.registerTest(tests, "hammer_progression_forged_throw", HammerProgressionGameTests::forgedThrow);
     }
 
     private static void recipes(GameTestHelper h) {
@@ -43,7 +40,7 @@ final class HammerProgressionGameTests {
             HammerSurvivalFixture.reject(p, HammerRegistry.TEMPEST_CORE.get());
             HammerSurvivalFixture.upgrade(p, HammerStage.RESONANT);
             HammerSurvivalFixture.reject(p, HammerRegistry.RESONANCE_CORE.get());
-            p.getMainHandItem().set(HammerRegistry.HAMMER_CHARGE, 23);
+            p.getMainHandItem().set(HammerRegistry.HAMMER_CHARGE.get(), 23);
             HammerSurvivalFixture.upgrade(p, HammerStage.TEMPEST);
             HammerSurvivalFixture.reject(p, HammerRegistry.RESONANCE_CORE.get());
             HammerSurvivalFixture.reject(p, HammerRegistry.TEMPEST_CORE.get());
@@ -65,16 +62,16 @@ final class HammerProgressionGameTests {
             var visited = EnumSet.noneOf(MiningShape.class);
             for (int i = 0; i < allowed.size(); i++) {
                 CycleMiningModePayload.cycleMiningMode(p, hammer);
-                visited.add(hammer.get(HammerRegistry.MULTI_BLOCK_MINING).shape());
+                visited.add(hammer.get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape());
             }
             h.assertTrue(visited.equals(allowed), "Unexpected " + stage + " cycle " + visited);
             int expectedCapacity = switch (stage) { case FORGED -> 0; case RESONANT -> 64; case TEMPEST -> 96; };
-            hammer.set(HammerRegistry.HAMMER_CHARGE, 1000);
+            hammer.set(HammerRegistry.HAMMER_CHARGE.get(), 1000);
             p.tickCount = 20;
             hammer.getItem().inventoryTick(hammer, p.level(), p, EquipmentSlot.MAINHAND);
             h.assertTrue(HammerItem.charge(hammer) == expectedCapacity, "Overcharged " + stage);
             if (expectedCapacity > 0) {
-                hammer.set(HammerRegistry.HAMMER_CHARGE, expectedCapacity - 1);
+                hammer.set(HammerRegistry.HAMMER_CHARGE.get(), expectedCapacity - 1);
                 p.tickCount = 40;
                 hammer.getItem().inventoryTick(hammer, p.level(), p, EquipmentSlot.MAINHAND);
                 p.tickCount = 60;
@@ -82,7 +79,7 @@ final class HammerProgressionGameTests {
                 h.assertTrue(HammerItem.charge(hammer) == expectedCapacity, "Incorrect " + stage + " recharge cap");
             }
             UpdateToolConfigPayload.applyToHeldItem(p, ToolConfig.DEFAULT.withMiningSpeed(MiningSpeed.INSTABREAK));
-            h.assertTrue((hammer.get(HammerRegistry.TOOL_CONFIG).miningSpeed() == MiningSpeed.INSTABREAK) == (stage == HammerStage.TEMPEST),
+            h.assertTrue((hammer.get(HammerRegistry.TOOL_CONFIG.get()).miningSpeed() == MiningSpeed.INSTABREAK) == (stage == HammerStage.TEMPEST),
                     "Instabreak tier bypass on " + stage);
             h.assertTrue(HammerAction.SCAN.availableOn(hammer) == (stage != HammerStage.FORGED)
                     && HammerAction.LIGHTNING.availableOn(hammer) == (stage == HammerStage.TEMPEST)
@@ -93,7 +90,7 @@ final class HammerProgressionGameTests {
             }
             if (stage != HammerStage.TEMPEST) {
                 p.setOnGround(false);
-                h.assertTrue(!GroundSlam.activate(p, HAND) && !p.hasData(HammerRegistry.PENDING_SLAM)
+                h.assertTrue(!GroundSlam.activate(p, HAND) && HammerRegistry.pendingSlam(p) == null
                         && HammerItem.charge(hammer) == expectedCapacity, "Locked slam activated or spent charge on " + stage);
             }
         }

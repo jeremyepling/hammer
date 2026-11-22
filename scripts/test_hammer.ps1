@@ -5,7 +5,8 @@ param(
     [Parameter(Mandatory)] [string]$SourceWorld,
     [ValidateSet('hammer','stair-outline','powers','radial','progression')][string]$Scenario = 'hammer',
     [switch]$Offline,
-    [ValidateSet('26.1','26.3')][string]$Target = '26.1'
+    [ValidateSet('26.1','26.3')][string]$Target = '26.1',
+    [ValidateSet('neoforge','fabric')][string]$Loader = 'neoforge'
 )
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
@@ -56,7 +57,7 @@ try {
     foreach ($phase in $phases) {
         Write-Host "Launching Hammer phase $phase ..."
         $log = Join-Path $gameDir "phase-$phase.log"
-        & .\gradlew.bat @options "-PplaytestId=$runId" "-PplaytestPhase=$phase" "-PplaytestScenario=$Scenario" ":$Target-neoforge:runWorldPlaytest" *> $log
+        & .\gradlew.bat @options "-PplaytestId=$runId" "-PplaytestPhase=$phase" "-PplaytestScenario=$Scenario" ":$Target-${Loader}:runWorldPlaytest" *> $log
         $resultPath = Join-Path $gameDir "phase-$phase.result"
         $result = if (Test-Path -LiteralPath $resultPath) { (Get-Content -Raw -LiteralPath $resultPath).Trim() } else { 'Missing client result' }
         if ($LASTEXITCODE -ne 0 -or $result -ne 'PASS') { throw "Hammer phase $phase failed: $result. See $log" }

@@ -20,7 +20,6 @@ import net.minecraft.world.entity.EntityType;
 *///?}
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public record SpawnLightningPayload(BlockPos targetPos) implements CustomPacketPayload {
 
@@ -31,8 +30,8 @@ public record SpawnLightningPayload(BlockPos targetPos) implements CustomPacketP
             SpawnLightningPayload::new
     );
 
-    public static void onServerReceived(final SpawnLightningPayload data, final IPayloadContext context) {
-        if (context.player() instanceof ServerPlayer player && data.targetPos().equals(targetFromView(player))) {
+    public static void onServerReceived(final SpawnLightningPayload data, final ServerPlayer player) {
+        if (data.targetPos().equals(targetFromView(player))) {
             spawnLightningBolt(player, InteractionHand.MAIN_HAND, data.targetPos());
         }
     }
@@ -51,7 +50,7 @@ public record SpawnLightningPayload(BlockPos targetPos) implements CustomPacketP
         *///?}
         if (lightningBolt != null) {
             lightningBolt.setPos(Vec3.atBottomCenterOf(targetPos));
-            if (serverLevel.addFreshEntity(lightningBolt) && player.getItemInHand(hand).is(HammerRegistry.HAMMER)) {
+            if (serverLevel.addFreshEntity(lightningBolt) && player.getItemInHand(hand).is(HammerRegistry.HAMMER.get())) {
                 HammerCorePayload.send(player, hand, HammerCorePayload.Cue.LIGHTNING);
             }
         }

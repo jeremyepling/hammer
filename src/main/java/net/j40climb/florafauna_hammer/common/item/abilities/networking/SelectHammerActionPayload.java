@@ -8,8 +8,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.player.Player;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.minecraft.server.level.ServerPlayer;
 
 public record SelectHammerActionPayload(int slot, HammerAction action) implements CustomPacketPayload {
     public static final Type<SelectHammerActionPayload> TYPE = new Type<>(
@@ -18,12 +17,11 @@ public record SelectHammerActionPayload(int slot, HammerAction action) implement
             ByteBufCodecs.VAR_INT, SelectHammerActionPayload::slot,
             HammerAction.STREAM_CODEC, SelectHammerActionPayload::action, SelectHammerActionPayload::new);
 
-    public static void onServerReceived(SelectHammerActionPayload payload, IPayloadContext context) {
-        Player player = context.player();
+    public static void onServerReceived(SelectHammerActionPayload payload, ServerPlayer player) {
         var stack = player.getMainHandItem();
-        if (player.getInventory().getSelectedSlot() == payload.slot && stack.has(HammerRegistry.HAMMER_ACTION)
+        if (player.getInventory().getSelectedSlot() == payload.slot && stack.has(HammerRegistry.HAMMER_ACTION.get())
                 && payload.action.availableOn(stack)) {
-            stack.set(HammerRegistry.HAMMER_ACTION, payload.action);
+            stack.set(HammerRegistry.HAMMER_ACTION.get(), payload.action);
         }
     }
 

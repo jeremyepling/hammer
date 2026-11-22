@@ -13,16 +13,9 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
-import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
 
 import java.util.List;
 
-@EventBusSubscriber(modid = HammerMod.MOD_ID, value = Dist.CLIENT)
 public final class SeismicScanEffects {
     private static final int PULSE_TICKS = 16;
     private static final DustParticleOptions VIOLET = new DustParticleOptions(0xB379FF, 0.85F);
@@ -33,12 +26,7 @@ public final class SeismicScanEffects {
     private static long markerStart;
     private static List<BlockPos> markers = List.of();
 
-    @SubscribeEvent
-    public static void networking(RegisterClientPayloadHandlersEvent event) {
-        event.register(SeismicScanPayload.TYPE, (scan, context) -> receive(scan));
-    }
-
-    private static void receive(SeismicScanPayload scan) {
+    public static void receive(SeismicScanPayload scan) {
         var level = Minecraft.getInstance().level;
         if (level == null || !level.dimension().identifier().equals(scan.dimension())) return;
         world = level;
@@ -54,8 +42,7 @@ public final class SeismicScanEffects {
         }
     }
 
-    @SubscribeEvent
-    public static void tick(ClientTickEvent.Post event) {
+    public static void tick() {
         if (world == null) return;
         if (Minecraft.getInstance().level != world) {
             world = null;
@@ -76,13 +63,7 @@ public final class SeismicScanEffects {
         }
     }
 
-    @SubscribeEvent
-    public static void layers(RegisterGuiLayersEvent event) {
-        event.registerBelowAll(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "ore_echoes"),
-                SeismicScanEffects::drawMarkers);
-    }
-
-    private static void drawMarkers(GuiGraphicsExtractor graphics, DeltaTracker delta) {
+    public static void drawMarkers(GuiGraphicsExtractor graphics, DeltaTracker delta) {
         var mc = Minecraft.getInstance();
         //? if <26.3 {
         if (markers.isEmpty() || mc.level != world || mc.options.hideGui) return;

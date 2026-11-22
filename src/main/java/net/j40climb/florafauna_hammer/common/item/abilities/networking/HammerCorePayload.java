@@ -8,7 +8,6 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /** One-shot sounds and particles. Keep the original cue ordinals for existing clients. */
 public record HammerCorePayload(int playerId, InteractionHand hand, Cue cue) implements CustomPacketPayload {
@@ -22,7 +21,7 @@ public record HammerCorePayload(int playerId, InteractionHand hand, Cue cue) imp
             CUE_CODEC, HammerCorePayload::cue, HammerCorePayload::new);
 
     public static void send(ServerPlayer player, InteractionHand hand, Cue cue) {
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new HammerCorePayload(player.getId(), hand, cue));
+        HammerNetwork.sendToTrackingAndSelf(player, new HammerCorePayload(player.getId(), hand, cue));
     }
 
     @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }

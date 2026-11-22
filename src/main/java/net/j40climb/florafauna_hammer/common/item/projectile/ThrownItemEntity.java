@@ -24,7 +24,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.GameMasterBlock;
 import net.minecraft.world.level.block.state.BlockState;
+//? if neoforge {
 import net.neoforged.neoforge.common.CommonHooks;
+//?}
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.BlockHitResult;
@@ -227,6 +229,7 @@ public class ThrownItemEntity extends AbstractArrow {
     }
 
     private boolean breakImpactBlock(ServerLevel level, ServerPlayer owner, BlockPos pos) {
+        //? if neoforge {
         BlockState state = level.getBlockState(pos);
         ItemStack tool = getThrownItem();
         if (state.isAir() || state.getDestroySpeed(level, pos) < 0 || !level.mayInteract(owner, pos)
@@ -245,6 +248,9 @@ public class ThrownItemEntity extends AbstractArrow {
         block.destroy(level, pos, adjusted);
         if (harvest) block.playerDestroy(level, owner, pos, adjusted, blockEntity, tool);
         return true;
+        //?} else {
+        /*return RemoteOreStrike.breakImpactBlock(owner, getThrownItem(), pos);
+        *///?}
     }
 
     @Override

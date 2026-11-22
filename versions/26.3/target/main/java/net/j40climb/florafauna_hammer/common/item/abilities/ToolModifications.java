@@ -30,6 +30,7 @@ final class ToolModifications {
         }
         for (BlockPos targetPos : blocksToModify) {
             if (requireTarget && targetPos.equals(pos)) continue;
+            if (!targetPos.equals(pos) && !RightClickActionHandler.allowsNeighborUse(player, hand, hitResult, targetPos)) continue;
             if (tryModifySingleBlock(player, hand, targetPos, hitResult, multiTool)) {
                 anyModified = true;
             }
@@ -55,6 +56,6 @@ final class ToolModifications {
 
     private static boolean transformBlock(UseOnContext context, ResourceKey<BlockTransformer> key) {
         Holder<BlockTransformer> transformer = context.getLevel().registryAccess().getOrThrow(key);
-        return transformer.value().transformBlock(context, transformer).consumesAction();
+        return ToolTransformer.apply(context, transformer);
     }
 }

@@ -11,7 +11,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.InteractionHand;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
  * Payload sent from client to server when the cycle mining mode key is pressed.
@@ -25,10 +24,7 @@ public enum CycleMiningModePayload implements CustomPacketPayload {
 
     public static final StreamCodec<ByteBuf, CycleMiningModePayload> STREAM_CODEC = StreamCodec.unit(INSTANCE);
 
-    public static void onServerReceived(final CycleMiningModePayload data, final IPayloadContext context) {
-        if (!(context.player() instanceof ServerPlayer player)) {
-            return;
-        }
+    public static void onServerReceived(final CycleMiningModePayload data, final ServerPlayer player) {
         cycleMiningMode(player, player.getMainHandItem());
     }
 
@@ -38,12 +34,12 @@ public enum CycleMiningModePayload implements CustomPacketPayload {
      */
     public static void cycleMiningMode(ServerPlayer player, ItemStack stack) {
 
-        MiningModeData previous = stack.get(HammerRegistry.MULTI_BLOCK_MINING);
+        MiningModeData previous = stack.get(HammerRegistry.MULTI_BLOCK_MINING.get());
         if (previous == null) return;
         MiningModeData selected = previous.getNextMode(HammerStage.of(stack));
-        stack.set(HammerRegistry.MULTI_BLOCK_MINING, selected);
+        stack.set(HammerRegistry.MULTI_BLOCK_MINING.get(), selected);
         player.sendOverlayMessage(selected.modeDescription());
-        if (stack.is(HammerRegistry.HAMMER) && selected.shape() != previous.shape()) {
+        if (stack.is(HammerRegistry.HAMMER.get()) && selected.shape() != previous.shape()) {
             var hand = stack == player.getMainHandItem() ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
             HammerCorePayload.send(player, hand, HammerCorePayload.Cue.MODE);
         }

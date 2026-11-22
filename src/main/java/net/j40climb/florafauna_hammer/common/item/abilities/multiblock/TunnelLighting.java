@@ -58,7 +58,14 @@ final class TunnelLighting {
 
     private static boolean enabled(ServerPlayer player, ItemStack tool) {
         return player.getMainHandItem() == tool && !tool.isEmpty() && player.isAlive() && !player.isSpectator()
-                && tool.getOrDefault(HammerRegistry.TOOL_CONFIG, ToolConfig.DEFAULT).tunnelLighting();
+                && tool.getOrDefault(HammerRegistry.TOOL_CONFIG.get(), ToolConfig.DEFAULT).tunnelLighting();
+    }
+
+    /** Use the real inventory stack while keeping the original hit on the supporting wall. */
+    private static final class TorchUseContext extends UseOnContext {
+        TorchUseContext(ServerPlayer player, InteractionHand hand, ItemStack torches, BlockHitResult hit) {
+            super(player.level(), player, hand, torches, hit);
+        }
     }
 
     private static ItemStack findTorches(ServerPlayer player) {
@@ -83,9 +90,12 @@ final class TunnelLighting {
 
             var hand = player.getOffhandItem() == torches ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
             var hit = new BlockHitResult(Vec3.atCenterOf(support).relative(face, 0.5), face, support, false);
-            var context = new UseOnContext(level, player, hand, torches, hit);
+            var context = new TorchUseContext(player, hand, torches, hit);
             // A replaceable wall would redirect this click into the wall itself.
             if (!new BlockPlaceContext(context).getClickedPos().equals(pos)) continue;
+            //? if fabric {
+            /*if (!net.j40climb.florafauna_hammer.common.item.abilities.FabricHammerEvents.allowsBlockUse(player, hand, hit)) continue;
+            *///?}
             if (torches.useOn(context).consumesAction() && level.getBlockState(pos).is(Blocks.WALL_TORCH)) {
                 player.getInventory().setChanged();
                 rememberUntilLit(level, pos);

@@ -15,7 +15,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
  * Payload sent from client to server when the throw key is pressed.
@@ -32,10 +31,7 @@ public record ThrowItemPayload(boolean mainHand) implements CustomPacketPayload 
             ThrowItemPayload::new
     );
 
-    public static void onServerReceived(final ThrowItemPayload data, final IPayloadContext context) {
-        if (!(context.player() instanceof ServerPlayer player)) {
-            return;
-        }
+    public static void onServerReceived(final ThrowItemPayload data, final ServerPlayer player) {
         InteractionHand hand = data.mainHand ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
         throwItem(player, hand);
     }
@@ -52,11 +48,11 @@ public record ThrowItemPayload(boolean mainHand) implements CustomPacketPayload 
         ItemStack stack = player.getItemInHand(hand);
 
         // Check if item has throwable ability
-        if (!stack.has(HammerRegistry.THROWABLE_ABILITY)) {
+        if (!stack.has(HammerRegistry.THROWABLE_ABILITY.get())) {
             return;
         }
 
-        ThrowableAbilityData abilityData = stack.get(HammerRegistry.THROWABLE_ABILITY);
+        ThrowableAbilityData abilityData = stack.get(HammerRegistry.THROWABLE_ABILITY.get());
         if (abilityData == null) {
             return;
         }

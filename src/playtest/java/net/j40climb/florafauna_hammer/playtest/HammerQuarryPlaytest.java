@@ -41,9 +41,9 @@ final class HammerQuarryPlaytest {
         });
         for (MiningShape shape : new MiningShape[]{MiningShape.FLAT_7X7,
                 MiningShape.SHAPELESS, MiningShape.TUNNEL_UP, MiningShape.TUNNEL_DOWN}) {
-            t.client("Cycle to " + shape, mc -> KeyMapping.click(ClientSetup.CYCLE_MINING_MODE_KEY.get().getKey()));
+            t.client("Cycle to " + shape, mc -> KeyMapping.click(ClientSetup.boundKey(ClientSetup.CYCLE_MINING_MODE_KEY.get())));
             t.awaitClient("Receive " + shape + " from the server", mc ->
-                    mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == shape);
+                    mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == shape);
         }
         cutThenWalk(t, 0);
         cutThenWalk(t, 1);
@@ -53,7 +53,7 @@ final class HammerQuarryPlaytest {
             HammerPlaytest.releaseWheel(mc);
         });
         t.awaitServer("Attach the favorite to the held Hammer", p -> {
-            var mode = p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING);
+            var mode = p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get());
             return mode.shape() == MiningShape.TUNNEL_DOWN && mode.isFavorite(MiningShape.WALKABLE_TUNNEL);
         });
         HammerMenuPlaytest.choose(t, HammerAction.TILL);
@@ -66,10 +66,10 @@ final class HammerQuarryPlaytest {
             verifyFlight(player.level(), face(1));
             var hammer = player.getMainHandItem();
             Playtest.require(hammer.is(HammerRegistry.HAMMER.get())
-                    && hammer.get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.TUNNEL_DOWN
-                    && hammer.get(HammerRegistry.MULTI_BLOCK_MINING).isFavorite(MiningShape.WALKABLE_TUNNEL)
-                    && hammer.get(HammerRegistry.HAMMER_ACTION) == HammerAction.TILL
-                    && hammer.get(HammerRegistry.TOOL_CONFIG).miningSpeed() == MiningSpeed.INSTABREAK,
+                    && hammer.get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == MiningShape.TUNNEL_DOWN
+                    && hammer.get(HammerRegistry.MULTI_BLOCK_MINING.get()).isFavorite(MiningShape.WALKABLE_TUNNEL)
+                    && hammer.get(HammerRegistry.HAMMER_ACTION.get()) == HammerAction.TILL
+                    && hammer.get(HammerRegistry.TOOL_CONFIG.get()).miningSpeed() == MiningSpeed.INSTABREAK,
                     "Lost the selected Hammer or its configuration on rejoin");
         });
         cutThenWalk(t, 2);
@@ -148,10 +148,10 @@ final class HammerQuarryPlaytest {
             p.level().setBlockAndUpdate(lava, Blocks.LAVA.defaultBlockState());
             p.teleportTo(p.level(), entry.getX() + 0.5, entry.getY(), entry.getZ() - 2.5, Set.of(), 0f, 0f, true);
         });
-        t.client("Select Walkable Tunnel", mc -> KeyMapping.click(ClientSetup.CYCLE_MINING_MODE_KEY.get().getKey()));
+        t.client("Select Walkable Tunnel", mc -> KeyMapping.click(ClientSetup.boundKey(ClientSetup.CYCLE_MINING_MODE_KEY.get())));
         t.awaitClient("Aim at the bottom block with Walkable Tunnel active", mc -> {
             mc.player.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atCenterOf(entry).add(0, 0, -0.5));
-            return mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING).shape() == MiningShape.WALKABLE_TUNNEL
+            return mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == MiningShape.WALKABLE_TUNNEL
                     && mc.hitResult instanceof BlockHitResult hit && hit.getBlockPos().equals(entry) && hit.getDirection() == Direction.NORTH;
         });
         t.awaitClient("Receive the buried lava pocket", mc -> mc.level.getBlockState(lava).is(Blocks.LAVA));

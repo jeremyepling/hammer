@@ -71,6 +71,18 @@ public final class ClientSetup {
             KEY_CATEGORY
     ));
 
+    public static void submit(net.minecraft.client.gui.GuiGraphicsExtractor gui, net.minecraft.client.renderer.state.gui.GuiElementRenderState state) {
+        gui.submitGuiElementRenderState(state);
+    }
+
+    public static InputConstants.Key boundKey(KeyMapping mapping) {
+        return mapping.getKey();
+    }
+
+    public static void sendToServer(net.minecraft.network.protocol.common.custom.CustomPacketPayload payload) {
+        net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(payload);
+    }
+
     public static void init(IEventBus bus) {
         bus.addListener(ClientSetup::registerKeys);
         bus.addListener(ClientSetup::registerRenderers);

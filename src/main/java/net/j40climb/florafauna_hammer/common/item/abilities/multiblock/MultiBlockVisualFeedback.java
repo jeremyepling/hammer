@@ -7,16 +7,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
 import java.util.List;
 
 /** The local player's additional block cracks, cleared using the positions actually drawn. */
-@EventBusSubscriber(modid = HammerMod.MOD_ID, value = Dist.CLIENT)
 public final class MultiBlockVisualFeedback {
     private static BlockPos target = BlockPos.ZERO;
     private static Direction hitFace = Direction.UP;
@@ -26,40 +20,31 @@ public final class MultiBlockVisualFeedback {
 
     private MultiBlockVisualFeedback() {}
 
-    @SubscribeEvent
-    public static void onLeftClick(PlayerInteractEvent.LeftClickBlock event) {
-        Player player = event.getEntity();
-        if (!player.level().isClientSide()) return;
-        switch (event.getAction()) {
-            case STOP, ABORT -> clear(player);
-            case START -> {
-                clear(player);
-                target = event.getPos().immutable();
-                hitFace = event.getFace();
-                ticksMining = 0;
-            }
-            case CLIENT_HOLD -> {
-                if (!event.getPos().equals(target) || !event.getItemStack().has(HammerRegistry.MULTI_BLOCK_MINING)) {
-                    clear(player);
-                    return;
-                }
-                var mode = MiningModeData.effective(event.getItemStack());
-                if (ticksMining == 0 || !mode.equals(crackMode)) {
-                    draw(player, -1);
-                    crackMode = mode;
-                    cracks = MultiBlockPatterns.plan(player, event.getItemStack(), target, hitFace).blocks().stream()
-                            .filter(pos -> !pos.equals(target)).toList();
-                }
-                ticksMining++;
-                var state = player.level().getBlockState(target);
-                float progress = state.getDestroyProgress(player, player.level(), target) * ticksMining;
-                draw(player, Math.min(9, (int) (progress * 10)));
-            }
-        }
+    public static void start(Player player, BlockPos pos, Direction face) {
+        clear(player);
+        target = pos.immutable();
+        hitFace = face;
     }
 
-    @SubscribeEvent
-    public static void onClientTick(ClientTickEvent.Post event) {
+    public static void hold(Player player, BlockPos pos) {
+        if (!pos.equals(target) || !player.getMainHandItem().has(HammerRegistry.MULTI_BLOCK_MINING.get())) {
+            clear(player);
+            return;
+        }
+        var mode = MiningModeData.effective(player.getMainHandItem());
+        if (ticksMining == 0 || !mode.equals(crackMode)) {
+            draw(player, -1);
+            crackMode = mode;
+            cracks = MultiBlockPatterns.plan(player, player.getMainHandItem(), target, hitFace).blocks().stream()
+                    .filter(neighbor -> !neighbor.equals(target)).toList();
+        }
+        ticksMining++;
+        var state = player.level().getBlockState(target);
+        float progress = state.getDestroyProgress(player, player.level(), target) * ticksMining;
+        draw(player, Math.min(9, (int) (progress * 10)));
+    }
+
+    public static void onClientTick() {
         if (cracks.isEmpty()) return;
         var client = Minecraft.getInstance();
         if (client.player == null || client.gameMode == null) {
@@ -74,7 +59,7 @@ public final class MultiBlockVisualFeedback {
         return gameMode != null && gameMode.isDestroying() && pos.equals(target) ? hitFace : hoveredFace;
     }
 
-    private static void clear(Player player) {
+    public static void clear(Player player) {
         draw(player, -1);
         cracks = List.of();
         ticksMining = 0;
