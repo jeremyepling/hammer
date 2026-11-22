@@ -3,6 +3,7 @@ package net.j40climb.florafauna_hammer.playtest;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningSpeed;
 import net.j40climb.florafauna_hammer.setup.ClientSetup;
+import net.j40climb.florafauna_hammer.setup.HammerKey;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.client.KeyMapping;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
@@ -41,7 +42,7 @@ final class HammerQuarryPlaytest {
         });
         for (MiningShape shape : new MiningShape[]{MiningShape.FLAT_7X7,
                 MiningShape.SHAPELESS, MiningShape.TUNNEL_UP, MiningShape.TUNNEL_DOWN}) {
-            t.client("Cycle to " + shape, mc -> KeyMapping.click(ClientSetup.boundKey(ClientSetup.CYCLE_MINING_MODE_KEY.get())));
+            t.client("Cycle to " + shape, mc -> KeyMapping.click(ClientSetup.boundKey(HammerKey.CYCLE_MINING_MODE.mapping())));
             t.awaitClient("Receive " + shape + " from the server", mc ->
                     mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == shape);
         }
@@ -148,7 +149,7 @@ final class HammerQuarryPlaytest {
             p.level().setBlockAndUpdate(lava, Blocks.LAVA.defaultBlockState());
             p.teleportTo(p.level(), entry.getX() + 0.5, entry.getY(), entry.getZ() - 2.5, Set.of(), 0f, 0f, true);
         });
-        t.client("Select Walkable Tunnel", mc -> KeyMapping.click(ClientSetup.boundKey(ClientSetup.CYCLE_MINING_MODE_KEY.get())));
+        t.client("Select Walkable Tunnel", mc -> KeyMapping.click(ClientSetup.boundKey(HammerKey.CYCLE_MINING_MODE.mapping())));
         t.awaitClient("Aim at the bottom block with Walkable Tunnel active", mc -> {
             mc.player.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atCenterOf(entry).add(0, 0, -0.5));
             return mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == MiningShape.WALKABLE_TUNNEL

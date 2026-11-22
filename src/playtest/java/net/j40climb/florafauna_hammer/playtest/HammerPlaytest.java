@@ -8,6 +8,7 @@ import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningSpeed;
 import net.j40climb.florafauna_hammer.common.item.abilities.menu.HammerMenuScreen;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.UpdateToolConfigPayload;
 import net.j40climb.florafauna_hammer.setup.ClientSetup;
+import net.j40climb.florafauna_hammer.setup.HammerKey;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.client.CameraType;
@@ -88,7 +89,7 @@ public final class HammerPlaytest {
             configButton(mc, "speed.instabreak");
             releaseWheel(mc);
         });
-        t.client("Tap the mapped mining key", mc -> KeyMapping.click(ClientSetup.boundKey(ClientSetup.CYCLE_MINING_MODE_KEY.get())));
+        t.client("Tap the mapped mining key", mc -> KeyMapping.click(ClientSetup.boundKey(HammerKey.CYCLE_MINING_MODE.mapping())));
         t.awaitServer("Select flat 3×3 mining on the server", p ->
                 p.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == MiningShape.FLAT_3X3);
 
@@ -239,7 +240,7 @@ public final class HammerPlaytest {
 
     static void openMenu(Playtest t) {
         t.client("Hold the mapped Hammer control to open both wheels", mc -> {
-            var key = ClientSetup.boundKey(ClientSetup.CYCLE_MINING_MODE_KEY.get());
+            var key = ClientSetup.boundKey(HammerKey.CYCLE_MINING_MODE.mapping());
             KeyMapping.set(key, true);
             KeyMapping.click(key);
         });
@@ -247,7 +248,7 @@ public final class HammerPlaytest {
     }
 
     static void releaseWheel(Minecraft mc) {
-        var mapped = ClientSetup.boundKey(ClientSetup.CYCLE_MINING_MODE_KEY.get());
+        var mapped = ClientSetup.boundKey(HammerKey.CYCLE_MINING_MODE.mapping());
         Playtest.require(Playtest.screen(mc) instanceof HammerMenuScreen, "Hammer wheel closed before releasing the bound key");
         // A screen receives the physical key-up even when opening it cleared the game's key mappings.
         Playtest.require(Playtest.screen(mc).keyReleased(new KeyEvent(mapped.getValue(), 0, 0)), "Wheel ignored the mapped release");

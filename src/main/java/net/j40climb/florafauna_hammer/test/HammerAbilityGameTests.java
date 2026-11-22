@@ -80,14 +80,31 @@ final class HammerAbilityGameTests {
         ItemStack hammer = new ItemStack(HammerRegistry.HAMMER.get());
         player.setItemInHand(InteractionHand.MAIN_HAND, hammer);
         BlockPos target = helper.absolutePos(new BlockPos(1, 1, 1));
+        var neighbor = target.east();
+        var outside = target.east(2);
+        var protectedNeighbor = target.west();
+        var level = helper.getLevel();
         var hit = new BlockHitResult(Vec3.atCenterOf(target), Direction.UP, target, false);
         hammer.set(HammerRegistry.MULTI_BLOCK_MINING.get(), new MiningModeData(MiningShape.FLAT_3X3, 1, 64, true));
         for (var mode : java.util.List.of(HammerAction.AUTO, HammerAction.STRIP, HammerAction.PATH, HammerAction.TILL, HammerAction.THROW)) {
             hammer.set(HammerRegistry.HAMMER_ACTION.get(), mode);
             var original = mode == HammerAction.STRIP || mode == HammerAction.THROW ? Blocks.OAK_LOG : Blocks.DIRT;
-            helper.getLevel().setBlockAndUpdate(target, original.defaultBlockState());
-            helper.getLevel().setBlockAndUpdate(target.above(), Blocks.AIR.defaultBlockState());
-            boolean use = TestPlatform.clickBlock(player, InteractionHand.MAIN_HAND, hit);
+            for (var pos : java.util.List.of(target, neighbor, outside, protectedNeighbor)) {
+                level.setBlockAndUpdate(pos, original.defaultBlockState());
+                level.setBlockAndUpdate(pos.above(), Blocks.AIR.defaultBlockState());
+            }
+            boolean use;
+            //? if fabric {
+            /*var release = TestPlatform.vetoPlacement(player, (pos, block) -> pos.equals(protectedNeighbor));
+            try {
+                use = TestPlatform.clickBlock(player, InteractionHand.MAIN_HAND, hit);
+                helper.assertTrue(level.getBlockState(protectedNeighbor).is(original), mode + " changed a vetoed neighbor");
+            } finally {
+                release.run();
+            }
+            *///?} else {
+            use = TestPlatform.clickBlock(player, InteractionHand.MAIN_HAND, hit);
+            //?}
             var expected = switch (mode) {
                 case AUTO, PATH -> Blocks.DIRT_PATH;
                 case STRIP -> Blocks.STRIPPED_OAK_LOG;
@@ -95,21 +112,21 @@ final class HammerAbilityGameTests {
                 case THROW -> Blocks.OAK_LOG;
                 default -> throw new AssertionError(mode);
             };
-            helper.assertTrue(use && helper.getLevel().getBlockState(target).is(expected), "Wrong effect for " + mode);
+            helper.assertTrue(use && level.getBlockState(target).is(expected), "Wrong center effect for " + mode);
+            helper.assertTrue(level.getBlockState(neighbor).is(expected), "Wrong 3×3 neighbor effect for " + mode);
+            helper.assertTrue(level.getBlockState(outside).is(original), mode + " changed an eligible block outside the 3×3");
             if (mode == HammerAction.THROW) {
                 var thrown = helper.getLevel().getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == player);
                 helper.assertTrue(hammer.isEmpty() && thrown.size() == 1 &&
                         thrown.getFirst().getThrownItem().get(HammerRegistry.HAMMER_ACTION.get()) == mode, "Throw lost the selected action or the tool");
                 thrown.getFirst().discard();
             } else if (mode != HammerAction.AUTO) {
-                helper.getLevel().setBlockAndUpdate(target, Blocks.CRAFTING_TABLE.defaultBlockState());
-                var neighbor = mode == HammerAction.STRIP ? Blocks.OAK_LOG : Blocks.DIRT;
-                helper.getLevel().setBlockAndUpdate(target.east(), neighbor.defaultBlockState());
-                helper.getLevel().setBlockAndUpdate(target.east().above(), Blocks.AIR.defaultBlockState());
+                level.setBlockAndUpdate(target, Blocks.CRAFTING_TABLE.defaultBlockState());
+                level.setBlockAndUpdate(neighbor, original.defaultBlockState());
                 boolean table = TestPlatform.clickBlock(player, InteractionHand.MAIN_HAND, hit);
                 boolean air = TestPlatform.clickAir(player, InteractionHand.MAIN_HAND);
                 helper.assertTrue(!table && !air && !hammer.isEmpty()
-                                && helper.getLevel().getBlockState(target.east()).is(neighbor),
+                                && level.getBlockState(neighbor).is(original),
                         "An inapplicable explicit action consumed vanilla interaction or threw the tool");
             }
         }

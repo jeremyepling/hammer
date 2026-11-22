@@ -5,6 +5,7 @@ import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.j40climb.florafauna_hammer.setup.ClientSetup;
+import net.j40climb.florafauna_hammer.setup.HammerKey;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.screens.inventory.ContainerScreen;
@@ -130,7 +131,7 @@ final class HammerPowerPlaytest {
         t.client("Restore first person for the lightning discharge", mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
         t.awaitClient("Aim down the lightning lane", mc -> mc.player.getYRot() == -90f
                 && mc.level.getBlockState(new BlockPos(8, 202, 0)).is(Blocks.OBSIDIAN));
-        t.client("Activate lightning with the mapped key", mc -> KeyMapping.click(ClientSetup.boundKey(ClientSetup.SUMMON_LIGHTNING_KEY.get())));
+        t.client("Activate lightning with the mapped key", mc -> KeyMapping.click(ClientSetup.boundKey(HammerKey.SUMMON_LIGHTNING.mapping())));
         t.awaitClient("Observe a real bolt in the target lane", mc -> !mc.level.getEntitiesOfClass(
                 LightningBolt.class, mc.player.getBoundingBox().inflate(12)).isEmpty());
         t.screenshot("tempest-lightning-discharge-first");

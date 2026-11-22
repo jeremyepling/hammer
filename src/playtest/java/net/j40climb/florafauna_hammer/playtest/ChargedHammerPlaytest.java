@@ -3,6 +3,7 @@ package net.j40climb.florafauna_hammer.playtest;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.ChargedThrowPayload;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
 import net.j40climb.florafauna_hammer.setup.ClientSetup;
+import net.j40climb.florafauna_hammer.setup.HammerKey;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.client.KeyMapping;
@@ -30,7 +31,7 @@ final class ChargedHammerPlaytest {
         t.awaitClient("See the charged-throw lane", mc -> mc.player.position().distanceToSqr(Vec3.atCenterOf(ore.north(7))) < 6
                 && mc.level.getBlockState(ore).is(Blocks.DIAMOND_ORE) && mc.player.getMainHandItem().is(HammerRegistry.HAMMER.get()));
         t.client("Hold the mapped throw key", mc -> {
-            var key = ClientSetup.THROW_ITEM_KEY.get();
+            var key = HammerKey.THROW_ITEM.mapping();
             key.setDown(true);
             KeyMapping.click(ClientSetup.boundKey(key));
         });
@@ -40,7 +41,7 @@ final class ChargedHammerPlaytest {
                     && p.getMainHandItem().is(HammerRegistry.HAMMER.get());
         });
         t.screenshot("tempest-throw-ready-first");
-        t.client("Release the mapped throw key", mc -> ClientSetup.THROW_ITEM_KEY.get().setDown(false));
+        t.client("Release the mapped throw key", mc -> HammerKey.THROW_ITEM.mapping().setDown(false));
         t.awaitServer("Strike only the diamond vein and debit the flying Hammer", p -> {
             if (!p.level().isEmptyBlock(ore) || !p.level().isEmptyBlock(ore.east())) return false;
             Playtest.require(p.level().getBlockState(ore.south()).is(Blocks.IRON_ORE), "The Hammer dug into another ore");

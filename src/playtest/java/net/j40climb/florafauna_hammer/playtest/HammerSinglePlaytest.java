@@ -3,6 +3,7 @@ package net.j40climb.florafauna_hammer.playtest;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
 import net.j40climb.florafauna_hammer.common.item.abilities.multiblock.MultiBlockPatterns;
 import net.j40climb.florafauna_hammer.setup.ClientSetup;
+import net.j40climb.florafauna_hammer.setup.HammerKey;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -14,8 +15,8 @@ import net.minecraft.client.KeyMapping;
 final class HammerSinglePlaytest {
     static void steps(Playtest t, BlockPos wall) {
         t.client("Double-tap C", mc -> {
-            KeyMapping.click(ClientSetup.boundKey(ClientSetup.CYCLE_MINING_MODE_KEY.get()));
-            KeyMapping.click(ClientSetup.boundKey(ClientSetup.CYCLE_MINING_MODE_KEY.get()));
+            KeyMapping.click(ClientSetup.boundKey(HammerKey.CYCLE_MINING_MODE.mapping()));
+            KeyMapping.click(ClientSetup.boundKey(HammerKey.CYCLE_MINING_MODE.mapping()));
         });
         t.awaitClient("Receive Single before striking", mc ->
                 mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == MiningShape.SINGLE);
@@ -34,7 +35,7 @@ final class HammerSinglePlaytest {
         t.server("Replace the center for the restored pattern", p -> p.level().setBlockAndUpdate(wall, Blocks.STONE.defaultBlockState()));
         t.awaitClient("Preview the single target after key release", mc -> mc.level.getBlockState(wall).is(Blocks.STONE)
                 && MultiBlockPatterns.plan(mc.player, mc.player.getMainHandItem(), wall, Direction.NORTH).blocks().equals(List.of(wall)));
-        t.client("Tap C to select the next shape", mc -> KeyMapping.click(ClientSetup.boundKey(ClientSetup.CYCLE_MINING_MODE_KEY.get())));
+        t.client("Tap C to select the next shape", mc -> KeyMapping.click(ClientSetup.boundKey(HammerKey.CYCLE_MINING_MODE.mapping())));
         t.awaitClient("Receive 3x3", mc -> mc.player.getMainHandItem().get(HammerRegistry.MULTI_BLOCK_MINING.get()).shape() == MiningShape.FLAT_3X3);
         t.client("Attack using 3x3", mc -> {
             Playtest.require(mc.gameMode.startDestroyBlock(wall, Direction.NORTH), "3×3 strike refused after cycling");

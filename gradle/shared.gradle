@@ -11,6 +11,18 @@ stonecutter.constants.put('neoforge', loader == 'neoforge')
 sourceSets.main.java.source(loaderSources.java)
 sourceSets.main.resources.source(loaderSources.resources)
 
+tasks.named('processResources') {
+    def ingredientFields = [
+            loader: loader,
+            typeKey: loader == 'fabric' ? 'fabric:type' : 'neoforge:ingredient_type',
+            itemKey: loader == 'fabric' ? 'base' : 'items'
+    ]
+    inputs.properties ingredientFields
+    filesMatching(['data/florafauna/recipe/resonant_hammer.json', 'data/florafauna/recipe/tempest_hammer.json']) {
+        expand ingredientFields
+    }
+}
+
 // Each target adds its own gameplay classes and assets to the shared sources.
 sourceSets.main.java.srcDir 'target/main/java'
 sourceSets.main.java.srcDir rootProject.file("versions/${minecraft_version}/target/main/java")

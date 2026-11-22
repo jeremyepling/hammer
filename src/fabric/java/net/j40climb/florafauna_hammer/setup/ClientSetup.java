@@ -16,62 +16,14 @@ import net.j40climb.florafauna_hammer.common.item.abilities.networking.SeismicSc
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
-//? if <26.3 {
-import org.lwjgl.glfw.GLFW;
-//?}
 
 public final class ClientSetup implements net.fabricmc.api.ClientModInitializer {
 
-    public static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category.register(
-            Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "hammer"));
+    private static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category.register(HammerKey.CATEGORY_ID);
 
-    public static final java.util.function.Supplier<KeyMapping> SUMMON_LIGHTNING_KEY = com.google.common.base.Suppliers.memoize(() -> new KeyMapping(
-            "key.florafauna.summon_lightning",
-            //? if <26.3 {
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_R,
-            //?} else {
-            /*InputConstants.Type.KEYBOARD,
-            InputConstants.KEY_R,
-            *///?}
-            KEY_CATEGORY
-    ));
-
-    public static final java.util.function.Supplier<KeyMapping> TELEPORT_SURFACE_KEY = com.google.common.base.Suppliers.memoize(() -> new KeyMapping(
-            "key.florafauna.teleport_surface",
-            //? if <26.3 {
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_M,
-            //?} else {
-            /*InputConstants.Type.KEYBOARD,
-            InputConstants.KEY_M,
-            *///?}
-            KEY_CATEGORY
-    ));
-
-    public static final java.util.function.Supplier<KeyMapping> THROW_ITEM_KEY = com.google.common.base.Suppliers.memoize(() -> new KeyMapping(
-            "key.florafauna.throw_item",
-            //? if <26.3 {
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_T,
-            //?} else {
-            /*InputConstants.Type.KEYBOARD,
-            InputConstants.KEY_T,
-            *///?}
-            KEY_CATEGORY
-    ));
-
-    public static final java.util.function.Supplier<KeyMapping> CYCLE_MINING_MODE_KEY = com.google.common.base.Suppliers.memoize(() -> new KeyMapping(
-            "key.florafauna.cycle_mining_mode",
-            //? if <26.3 {
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_C,
-            //?} else {
-            /*InputConstants.Type.KEYBOARD,
-            InputConstants.KEY_C,
-            *///?}
-            KEY_CATEGORY
-    ));
+    static KeyMapping createKey(String translationKey, int defaultKey) {
+        return new KeyMapping(translationKey, defaultKey, KEY_CATEGORY);
+    }
 
     public static void submit(net.minecraft.client.gui.GuiGraphicsExtractor gui, net.minecraft.client.renderer.state.gui.GuiElementRenderState state) {
         gui.guiRenderState.addGuiElement(state);
@@ -87,10 +39,7 @@ public final class ClientSetup implements net.fabricmc.api.ClientModInitializer 
 
     @Override
     public void onInitializeClient() {
-        KeyMappingHelper.registerKeyMapping(SUMMON_LIGHTNING_KEY.get());
-        KeyMappingHelper.registerKeyMapping(TELEPORT_SURFACE_KEY.get());
-        KeyMappingHelper.registerKeyMapping(THROW_ITEM_KEY.get());
-        KeyMappingHelper.registerKeyMapping(CYCLE_MINING_MODE_KEY.get());
+        HammerKey.registerAll(KeyMappingHelper::registerKeyMapping);
         EntityRendererRegistry.register(HammerRegistry.THROWN_ITEM.get(), ThrownItemRenderer::new);
         ClientPlayNetworking.registerGlobalReceiver(HammerCorePayload.TYPE, (packet, context) -> HammerAbilityFeedback.receive(packet));
         ClientPlayNetworking.registerGlobalReceiver(SeismicScanPayload.TYPE, (packet, context) -> SeismicScanEffects.receive(packet));

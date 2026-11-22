@@ -9,6 +9,7 @@ import net.j40climb.florafauna_hammer.common.item.abilities.networking.TeleportT
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.ClientSetup;
+import net.j40climb.florafauna_hammer.setup.HammerKey;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.j40climb.florafauna_hammer.test.HammerSurvivalFixture;
 import net.minecraft.client.CameraType;
@@ -263,7 +264,7 @@ final class HammerProgressionPlaytest {
             return true;
         });
         t.client("Double-tap C with only Bore and 3x3 favorited", mc -> {
-            var key = ClientSetup.boundKey(ClientSetup.CYCLE_MINING_MODE_KEY.get());
+            var key = ClientSetup.boundKey(HammerKey.CYCLE_MINING_MODE.mapping());
             KeyMapping.click(key);
             KeyMapping.click(key);
         });

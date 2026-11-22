@@ -1,8 +1,8 @@
 {
   "type": "minecraft:smithing_transform",
   "base": {
-    "neoforge:ingredient_type": "neoforge:components",
-    "items": "florafauna:hammer",
+    "${typeKey}": "${loader}:components",
+    "${itemKey}": "florafauna:hammer",
     "components": {
       "florafauna:hammer_stage": "resonant"
     }

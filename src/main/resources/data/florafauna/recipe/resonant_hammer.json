@@ -1,8 +1,8 @@
 {
   "type": "minecraft:smithing_transform",
   "base": {
-    "fabric:type": "fabric:components",
-    "base": "florafauna:hammer",
+    "${typeKey}": "${loader}:components",
+    "${itemKey}": "florafauna:hammer",
     "components": {
       "florafauna:hammer_stage": "forged"
     }

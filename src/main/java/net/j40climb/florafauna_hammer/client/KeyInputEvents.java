@@ -7,6 +7,7 @@ import net.j40climb.florafauna_hammer.common.item.abilities.networking.TeleportT
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.ThrowItemPayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.ChargedThrowPayload;
 import net.j40climb.florafauna_hammer.setup.ClientSetup;
+import net.j40climb.florafauna_hammer.setup.HammerKey;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.client.Minecraft;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
@@ -31,7 +32,7 @@ public class KeyInputEvents {
             throwKeyPlayerId = player.getId();
             holdingThrow = false;
         }
-        var key = ClientSetup.THROW_ITEM_KEY.get();
+        var key = HammerKey.THROW_ITEM.mapping();
         //? if <26.3 {
         if (holdingThrow && (mc.screen != null || player.getInventory().getSelectedSlot() != throwSlot
         //?} else {
@@ -82,11 +83,11 @@ public class KeyInputEvents {
     // Observe physical edges before another input can arrive in the same tick. Tick polling also
     // supports injected key mappings and fires deadlines while the keyboard is idle.
     public static void onControlKey(net.minecraft.client.input.KeyEvent event, int action) {
-        if (ClientSetup.CYCLE_MINING_MODE_KEY.get().matches(event)) controlEdge(action);
+        if (HammerKey.CYCLE_MINING_MODE.mapping().matches(event)) controlEdge(action);
     }
 
     public static void onControlMouse(int button, int action) {
-        if (ClientSetup.boundKey(ClientSetup.CYCLE_MINING_MODE_KEY.get()).equals(InputConstants.Type.MOUSE.getOrCreate(button))) controlEdge(action);
+        if (ClientSetup.boundKey(HammerKey.CYCLE_MINING_MODE.mapping()).equals(InputConstants.Type.MOUSE.getOrCreate(button))) controlEdge(action);
     }
 
     private static void controlEdge(int action) {
@@ -112,7 +113,7 @@ public class KeyInputEvents {
         /*if (mc.gui.screen() instanceof HammerMenuScreen screen) screen.onClose();
         *///?}
         resetMenuHold();
-        var key = ClientSetup.CYCLE_MINING_MODE_KEY.get();
+        var key = HammerKey.CYCLE_MINING_MODE.mapping();
         key.setDown(false);
         while (key.consumeClick()) { } // Discard any repeat queued before the screen grabbed input.
     }
@@ -125,7 +126,7 @@ public class KeyInputEvents {
     }
 
     private static void updateControl(Minecraft mc) {
-        var key = ClientSetup.CYCLE_MINING_MODE_KEY.get();
+        var key = HammerKey.CYCLE_MINING_MODE.mapping();
         var player = mc.player;
         boolean down = key.isDown();
         int clicks = 0;
@@ -204,14 +205,14 @@ public class KeyInputEvents {
 
         ItemStack itemStack = player.getMainHandItem();
         // The key mappings have to be consumed during the event or it will replay the event on each tick. Don't check anything for this outside of player null
-        while (ClientSetup.SUMMON_LIGHTNING_KEY.get().consumeClick()) {
+        while (HammerKey.SUMMON_LIGHTNING.mapping().consumeClick()) {
             // Component-based check - works with any item that has LIGHTNING_ABILITY
             if (HammerAction.LIGHTNING.availableOn(itemStack)) {
                 BlockPos targetPos = SpawnLightningPayload.targetFromView(player);
                 ClientSetup.sendToServer(new SpawnLightningPayload(targetPos));
             }
         }
-        while (ClientSetup.TELEPORT_SURFACE_KEY.get().consumeClick()) {
+        while (HammerKey.TELEPORT_SURFACE.mapping().consumeClick()) {
             // Component-based check - works with any item that has TELEPORT_SURFACE_ABILITY
             if (HammerAction.TELEPORT.availableOn(itemStack)) {
                 ClientSetup.sendToServer(TeleportToSurfacePayload.INSTANCE);

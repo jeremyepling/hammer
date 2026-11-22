@@ -22,6 +22,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.j40climb.florafauna_hammer.client.KeyInputEvents;
 import net.j40climb.florafauna_hammer.setup.ClientSetup;
+import net.j40climb.florafauna_hammer.setup.HammerKey;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -255,7 +256,7 @@ public final class HammerMenuScreen extends Screen {
         }
         if (!settingsOpen && action != null) g.centeredText(font, action.label(), rightX, headingY + 11, 0xffffd17e);
         var pointed = pointedWedge(rightWheel, mouseX, mouseY);
-        var release = Component.translatable(MENU + "release_hint", ClientSetup.CYCLE_MINING_MODE_KEY.get().getTranslatedKeyMessage());
+        var release = Component.translatable(MENU + "release_hint", HammerKey.CYCLE_MINING_MODE.mapping().getTranslatedKeyMessage());
         g.centeredText(font, hints.getOrDefault(pointed, release), rightX, detailY + 12, 0xffe1cbe9);
         Component detail = details.get(pointed);
         if (detail == null && !settingsOpen && tool.is(HammerRegistry.HAMMER.get())) {
@@ -299,7 +300,7 @@ public final class HammerMenuScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (ClientSetup.CYCLE_MINING_MODE_KEY.get().matchesMouse(event)) return true;
+        if (HammerKey.CYCLE_MINING_MODE.mapping().matchesMouse(event)) return true;
         mouseMoved(event.x(), event.y());
         boolean handled = super.mouseClicked(event, doubleClick);
         // A navigation click may have replaced the widget that just handled it.
@@ -309,7 +310,7 @@ public final class HammerMenuScreen extends Screen {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
-        if (ClientSetup.CYCLE_MINING_MODE_KEY.get().matchesMouse(event)) {
+        if (HammerKey.CYCLE_MINING_MODE.mapping().matchesMouse(event)) {
             KeyInputEvents.releaseMenuHold(minecraft);
             return true;
         }
@@ -319,7 +320,7 @@ public final class HammerMenuScreen extends Screen {
     @Override
     public boolean keyPressed(KeyEvent event) {
         // A repeat of the held control must never activate a focused widget, even when remapped to Enter or F.
-        if (ClientSetup.CYCLE_MINING_MODE_KEY.get().matches(event)) return true;
+        if (HammerKey.CYCLE_MINING_MODE.mapping().matches(event)) return true;
         switch (event.key()) {
             //? if <26.3 {
             case GLFW.GLFW_KEY_BACKSPACE -> {
@@ -376,7 +377,7 @@ public final class HammerMenuScreen extends Screen {
 
     @Override
     public boolean keyReleased(KeyEvent event) {
-        if (ClientSetup.CYCLE_MINING_MODE_KEY.get().matches(event)) {
+        if (HammerKey.CYCLE_MINING_MODE.mapping().matches(event)) {
             KeyInputEvents.releaseMenuHold(minecraft);
             return true;
         }
