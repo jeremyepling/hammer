@@ -6,10 +6,12 @@ import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.MoverType;
 //? if >=26.3 {
 /*import net.minecraft.world.entity.EntityTypes;*/
 //?} else {
@@ -101,17 +103,22 @@ final class HammerSlamLifecycleGameTests {
     }
 
     private static void playersAndFalls(GameTestHelper h) {
+        var floor = h.absolutePos(new BlockPos(8, 8, 8));
+        h.getLevel().setBlockAndUpdate(floor, Blocks.STONE.defaultBlockState());
+        for (int y = 1; y <= 13; y++) h.getLevel().setBlockAndUpdate(floor.above(y), Blocks.AIR.defaultBlockState());
+        for (int height : new int[]{5, 10}) {
+            float normal = landingDamage(h, floor, height, false);
+            float slammed = landingDamage(h, floor, height, true);
+            h.assertTrue(normal == height - 3 && slammed == normal - 2,
+                    height + "-block fall cost " + normal + " HP normally and " + slammed + " HP with a slam");
+        }
         var attacker = start(h);
-        var shortFall = TestPlatform.fallDistance(attacker, 1.25);
-        var longFall = TestPlatform.fallDistance(attacker, 40);
-        h.assertTrue(shortFall == 0 && longFall > 30, "Fall cushion lost short/high fall distinction");
         var witness = HammerPowerGameTests.airborne(h);
         //? if >=26.3 {
         /*witness.setPermanentlyInvulnerable(false);*/
         //?} else {
         witness.setInvulnerable(false);
         //?}
-        var floor = h.absolutePos(new BlockPos(8, 8, 8));
         witness.setPos(Vec3.atBottomCenterOf(floor.above().east()));
         h.getLevel().addNewPlayer(witness);
         try {
@@ -133,5 +140,28 @@ final class HammerSlamLifecycleGameTests {
             h.getLevel().removePlayerImmediately(witness, Entity.RemovalReason.UNLOADED_WITH_PLAYER);
         }
         h.succeed();
+    }
+
+    private static float landingDamage(GameTestHelper h, BlockPos floor, int height, boolean slam) {
+        var player = h.makeMockServerPlayerInLevel();
+        try {
+            player.setGameMode(GameType.SURVIVAL);
+            player.connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
+            player.setItemInHand(HAND, HammerStage.TEMPEST.createStack());
+            player.setPos(Vec3.atBottomCenterOf(floor.above(height + 1)));
+            player.setOnGround(false);
+            if (slam) h.assertTrue(GroundSlam.activate(player, HAND), "Slam failed before the " + height + "-block fall");
+            float health = player.getHealth();
+            double startY = player.getY();
+            // Resolve the collision, then pass the actual displacement to the server movement handler's landing check.
+            player.move(MoverType.PLAYER, new Vec3(0, -height - 0.5, 0));
+            double dy = player.getY() - startY;
+            h.assertTrue(player.onGround() && dy == -height && player.getOnPos().equals(floor),
+                    "Player did not land on the stone floor after " + height + " blocks");
+            player.doCheckFallDamage(0, dy, 0, player.onGround());
+            return health - player.getHealth();
+        } finally {
+            h.getLevel().getServer().getPlayerList().remove(player);
+        }
     }
 }

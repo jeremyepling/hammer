@@ -91,10 +91,6 @@ final class TestPlatform {
         GroundSlam.tick(player);
     }
 
-    static double fallDistance(ServerPlayer player, double distance) {
-        return GroundSlam.fallDistance(player, distance);
-    }
-
     static ServerPlayer scanPlayer(GameTestHelper helper, ChannelOutboundHandlerAdapter observer) {
         var level = helper.getLevel();
         var cookie = CommonListenerCookie.createInitial(new GameProfile(UUID.randomUUID(), "scan-test"), false);

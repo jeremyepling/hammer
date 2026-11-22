@@ -22,7 +22,6 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
-import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.network.registration.NetworkRegistry;
@@ -90,10 +89,6 @@ final class TestPlatform {
 
     static void tick(ServerPlayer player) {
         NeoForge.EVENT_BUS.post(new PlayerTickEvent.Post(player));
-    }
-
-    static double fallDistance(ServerPlayer player, double distance) {
-        return NeoForge.EVENT_BUS.post(new LivingFallEvent(player, distance, 1)).getDistance();
     }
 
     @SuppressWarnings("removal")
