@@ -26,7 +26,7 @@ if ((Get-Item -LiteralPath $world).Attributes.HasFlag([IO.FileAttributes]::Repar
 }
 $options = @('--console=plain')
 if ($Target -eq '26.4' -and $Loader -eq 'neoforge') {
-    if (!$PreviewNeoVersion) { throw 'The 26.4 NeoForge target requires a snapshot-10 loader in Maven Local. Supply -PreviewNeoVersion.' }
+    if (!$PreviewNeoVersion) { throw 'Supply -PreviewNeoVersion with a NeoForge version for Minecraft 26.4-snapshot-10 from NeoForge Maven or Maven Local.' }
     $options += "-PpreviewNeoVersion=$PreviewNeoVersion"
 }
 if ($Offline) { $options += '--offline' }

@@ -13,9 +13,8 @@ if (project.name == '26.4-neoforge') {
     ext.neo_version = providers.gradleProperty('previewNeoVersion').get()
     ext.neo_version_range = "[${neo_version}]"
     repositories {
-        exclusiveContent {
-            forRepository { mavenLocal() }
-            filter { includeVersion 'net.neoforged', 'neoforge', neo_version }
+        mavenLocal {
+            content { includeVersion 'net.neoforged', 'neoforge', neo_version }
         }
     }
 }
