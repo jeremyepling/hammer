@@ -108,6 +108,14 @@ The left wheel shows all ten mining shapes and enables the ones available at the
 
 In **Abilities**, select Auto, Strip, Path, Till, Throw, Lightning, Surface Teleport or Seismic Scan. Auto tries enabled block transformations first and then the configured fallback, which is Throw on a new Hammer. Strip, Path and Till leave the usual block interaction available when the targeted block cannot be transformed. In **Settings**, change enchantment, mining speed, vein matching or auto torches. Each Hammer carries its own selections.
 
+### Player action checks
+
+Use the [client runner](#build-and-test) with the indicated `-Scenario`, target, loader and a closed save for that Minecraft version.
+
+- **Choose both wheels in one hold** (`-Scenario radial`). With Seismic Scan unlocked, hold **C**, click Walkable Tunnel on the left, click Seismic Scan on the right, hover over Throw, then release. The wheels close and the held Hammer keeps Walkable and Scan on the server. The scripted client remaps **C** to **V** and also checks the reverse click order and a hover-only release.
+- **Match the descending stair preview across air** (`-Scenario stair-outline`). Start mining the wall face, then aim at the top of the same block during the swing. The client preview must retain the five original wall-facing tread positions across the gap. The server must place a north-facing cobblestone stair at each previewed position. To check the visible teal outline through rock, use `-Scenario hammer`. Its quarry also checks the five treads, cleared headroom and intact stone around the cut.
+- **Cut across a two-column cave** (GameTest `florafauna_hammer:hammer_tunnel_gaps`). Strike the wall in ascending and descending stair modes. The swing bridges the two empty columns, preserves bedrock in its path and ends at the fifth column. This headless case checks the resulting blocks. Use the client checks above for the preview.
+
 ## Seismic Scan
 
 Select **Seismic Scan**, stand on the ground and right-click. Chests, doors and other usable blocks still take their normal interaction. A violet pulse searches loaded terrain within 24 blocks for tagged ores. Up to 24 approximate deposit markers appear for the scanning player and fade after five seconds. Empty scans also spend 16 charge. The cooldown is eight seconds.

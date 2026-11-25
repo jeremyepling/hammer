@@ -4,6 +4,8 @@ Use Java 25 and the checked-in Gradle wrapper. Stonecutter builds 26.1 and 26.3 
 
 Test the behavior affected by each edit. JUnit, headless GameTests and the scripted quarry or action-wheel client can overlap independent work in other worktrees. The scripted client sends input inside Minecraft. Reserve the desktop only for steps that use real input or focus.
 
+For wheel input or stair mining across gaps, use the matching [player action check](README.md#player-action-checks) and its selector.
+
 - For shape cycling or configuration, use `./gradlew :26.1-neoforge:test --tests '*HammerConfigTest'` or the relevant JUnit class.
 - For world behavior, run one GameTest or group, for example `./gradlew "-PgameTestFilter=florafauna_hammer:hammer_tunnel_gaps" :26.1-neoforge:runGameTestServer`.
 - For controls, rendering and save/reload, run `./scripts/test_hammer.ps1 -Target 26.1 -SourceWorld <closed-save-directory>` under PowerShell 7. After a headless test you can use its generated `versions/26.1-neoforge/run/gameTestServer/gametestserver/gametestworld`. The runner makes a disposable copy.
