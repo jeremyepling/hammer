@@ -2,7 +2,7 @@ package net.j40climb.florafauna_hammer.common.item.abilities.menu;
 
 //? if <26.3 {
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-//?} else {
+//?} else if <26.4 {
 /*import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 *///?}
 import com.mojang.blaze3d.platform.InputConstants;
@@ -14,7 +14,11 @@ import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.render.TextureSetup;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.MouseButtonInfo;
+//? if <26.4 {
 import net.minecraft.client.renderer.RenderPipelines;
+//?} else {
+/*import net.minecraft.client.gui.GuiPipeline;
+*///?}
 import net.j40climb.florafauna_hammer.setup.ClientSetup;
 import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
 import net.minecraft.network.chat.Component;
@@ -88,7 +92,12 @@ final class RadialButton extends Button {
     }
 
     @Override
+    //? if <26.4 {
     protected void extractContents(GuiGraphicsExtractor gui, int mouseX, int mouseY, float partialTick) {
+    //?} else {
+    /*protected void extractContents(GuiGraphicsExtractor gui) {
+        int mouseX = gui.mouseX(), mouseY = gui.mouseY();
+    *///?}
         isHovered = contains(mouseX, mouseY);
         boolean highlighted = active && (isHovered || isFocused());
         int rim = !active ? 0xff514958 : selected ? 0xffffcc72 : highlighted ? 0xffdfb8ff : 0xff79678e;
@@ -140,7 +149,11 @@ final class RadialButton extends Button {
 
     private record Sector(Matrix3x2fc pose, ScreenRectangle bounds, int cx, int cy, int inner, int outer,
                           double start, double end, int face, int rim) implements GuiElementRenderState {
+        //? if <26.4 {
         @Override public RenderPipeline pipeline() { return RenderPipelines.GUI; }
+        //?} else {
+        /*@Override public GuiPipeline pipeline() { return GuiPipeline.DEFAULT; }
+        *///?}
         @Override public TextureSetup textureSetup() { return TextureSetup.noTexture(); }
         @Override public @Nullable ScreenRectangle scissorArea() { return null; }
 

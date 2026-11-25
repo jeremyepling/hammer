@@ -63,7 +63,12 @@ public final class SeismicScanEffects {
         }
     }
 
+    //? if <26.4 {
     public static void drawMarkers(GuiGraphicsExtractor graphics, DeltaTracker delta) {
+    //?} else {
+    /*public static void drawMarkers(GuiGraphicsExtractor graphics) {
+        var delta = graphics.deltaTracker();
+    *///?}
         var mc = Minecraft.getInstance();
         //? if <26.3 {
         if (markers.isEmpty() || mc.level != world || mc.options.hideGui) return;

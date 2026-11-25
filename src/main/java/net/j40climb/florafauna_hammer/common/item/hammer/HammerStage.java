@@ -7,6 +7,7 @@ import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningSpeed;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.network.chat.Component;
+import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.StringRepresentable;
@@ -16,7 +17,7 @@ public enum HammerStage implements StringRepresentable {
     FORGED("forged", 0), RESONANT("resonant", 64), TEMPEST("tempest", 96);
 
     public static final Codec<HammerStage> CODEC = StringRepresentable.fromEnum(HammerStage::values);
-    public static final StreamCodec<ByteBuf, HammerStage> STREAM_CODEC = ByteBufCodecs.fromCodec(CODEC);
+    public static final StreamCodec<ByteBuf, HammerStage> STREAM_CODEC = ByteBufCodecs.fromCodec(CODEC, NbtAccounter::defaultQuota);
     private final String name;
     private final int capacity;
 

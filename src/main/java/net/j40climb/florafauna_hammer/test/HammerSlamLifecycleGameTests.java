@@ -158,7 +158,11 @@ final class HammerSlamLifecycleGameTests {
             double dy = player.getY() - startY;
             h.assertTrue(player.onGround() && dy == -height && player.getOnPos().equals(floor),
                     "Player did not land on the stone floor after " + height + " blocks");
+            //? if <26.4 {
             player.doCheckFallDamage(0, dy, 0, player.onGround());
+            //?} else {
+            /*player.updateFallDistanceAndCheckFallDamageForClientControlledEntity(new Vec3(0, dy, 0), player.onGround());
+            *///?}
             return health - player.getHealth();
         } finally {
             h.getLevel().getServer().getPlayerList().remove(player);

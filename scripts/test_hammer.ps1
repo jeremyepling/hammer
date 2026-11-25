@@ -5,8 +5,9 @@ param(
     [Parameter(Mandatory)] [string]$SourceWorld,
     [ValidateSet('hammer','stair-outline','powers','radial','progression')][string]$Scenario = 'hammer',
     [switch]$Offline,
-    [ValidateSet('26.1','26.3')][string]$Target = '26.1',
-    [ValidateSet('neoforge','fabric')][string]$Loader = 'neoforge'
+    [ValidateSet('26.1','26.3','26.4')][string]$Target = '26.1',
+    [ValidateSet('neoforge','fabric')][string]$Loader = 'neoforge',
+    [string]$PreviewNeoVersion
 )
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
@@ -24,6 +25,10 @@ if ((Get-Item -LiteralPath $world).Attributes.HasFlag([IO.FileAttributes]::Repar
     throw 'Choose a self-contained save without symbolic links or junctions.'
 }
 $options = @('--console=plain')
+if ($Target -eq '26.4' -and $Loader -eq 'neoforge') {
+    if (!$PreviewNeoVersion) { throw 'The 26.4 NeoForge target requires a snapshot-10 loader in Maven Local. Supply -PreviewNeoVersion.' }
+    $options += "-PpreviewNeoVersion=$PreviewNeoVersion"
+}
 if ($Offline) { $options += '--offline' }
 $hash = (Get-FileHash -LiteralPath $level).Hash
 Write-Host "Source save: $world"
@@ -47,7 +52,11 @@ try {
             throw 'Source save changed during the copy.'
         }
         Set-Content -LiteralPath (Join-Path $gameDir '.florafauna-playtest') -Value $Scenario
-        $optionsVersion = if ($Target -eq '26.1') { 4786 } else { 5023 }
+        $optionsVersion = switch ($Target) {
+            '26.1' { 4786 }
+            '26.3' { 5023 }
+            '26.4' { if ($Loader -eq 'fabric') { 5131 } else { 5130 } }
+        }
         $gameOptions = @("version:$optionsVersion",'pauseOnLostFocus:false','key_key.florafauna.throw_item:key.keyboard.comma','skipMultiplayerWarning:true','onboardAccessibility:false','tutorialStep:none','autoJump:false','renderDistance:4','simulationDistance:5')
         if ($Scenario -eq 'radial') { $gameOptions += 'key_key.florafauna.cycle_mining_mode:key.keyboard.v' }
         $gameOptions | Set-Content -LiteralPath (Join-Path $gameDir 'options.txt')

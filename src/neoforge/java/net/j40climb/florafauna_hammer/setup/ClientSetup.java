@@ -4,7 +4,14 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.j40climb.florafauna_hammer.common.item.projectile.ThrownItemRenderer;
 import net.minecraft.client.KeyMapping;
 import net.neoforged.bus.api.IEventBus;
+//? if <26.4 {
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+//?} else {
+/*import net.minecraft.client.core.registries.ClientRegistries;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.j40climb.florafauna_hammer.common.item.projectile.ThrownItemEntity;
+import net.neoforged.neoforge.registries.RegisterEvent;
+*///?}
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 
@@ -37,8 +44,14 @@ public final class ClientSetup {
         bus.addListener(ClientSetup::registerRenderers);
     }
 
+    //? if <26.4 {
     private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(HammerRegistry.THROWN_ITEM.get(), ThrownItemRenderer::new);
+    //?} else {
+    /*private static void registerRenderers(RegisterEvent event) {
+        event.register(ClientRegistries.ENTITY_RENDERER, HammerRegistry.THROWN_ITEM_KEY.identifier(),
+                () -> (EntityRendererProvider<ThrownItemEntity>) ThrownItemRenderer::new);
+    *///?}
     }
 
     private static void registerKeys(RegisterKeyMappingsEvent event) {

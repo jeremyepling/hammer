@@ -16,7 +16,6 @@ import net.minecraft.client.KeyMapping;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.MouseButtonInfo;
 import net.minecraft.resources.Identifier;
@@ -251,7 +250,7 @@ public final class HammerPlaytest {
         var mapped = ClientSetup.boundKey(HammerKey.CYCLE_MINING_MODE.mapping());
         Playtest.require(Playtest.screen(mc) instanceof HammerMenuScreen, "Hammer wheel closed before releasing the bound key");
         // A screen receives the physical key-up even when opening it cleared the game's key mappings.
-        Playtest.require(Playtest.screen(mc).keyReleased(new KeyEvent(mapped.getValue(), 0, 0)), "Wheel ignored the mapped release");
+        Playtest.require(Playtest.screen(mc).keyReleased(Playtest.keyEvent(mapped.getValue())), "Wheel ignored the mapped release");
         Playtest.require(Playtest.screen(mc) == null, "Mapped release left the wheel open");
     }
 

@@ -7,7 +7,6 @@ import net.j40climb.florafauna_hammer.common.item.abilities.menu.HammerMenuScree
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.MouseButtonInfo;
 import net.minecraft.network.chat.CommonComponents;
@@ -23,7 +22,7 @@ final class HammerRadialPlaytest {
         HammerPlaytest.openMenu(t);
         t.client("Verify ten mining choices on the left and eight abilities on the right", HammerRadialPlaytest::checkBothWheels);
         t.client("Releasing the default C key leaves the remapped V hold active", mc -> {
-            Playtest.screen(mc).keyReleased(new KeyEvent(InputConstants.KEY_C, 0, 0));
+            Playtest.screen(mc).keyReleased(Playtest.keyEvent(InputConstants.KEY_C));
             Playtest.require(Playtest.screen(mc) instanceof HammerMenuScreen, "Unbound C closed the wheels");
         });
         t.screenshot("hammer-wheels");
@@ -184,7 +183,7 @@ final class HammerRadialPlaytest {
     }
 
     private static void key(Minecraft mc, int key) {
-        var event = new KeyEvent(key, 0, 0);
+        var event = Playtest.keyEvent(key);
         Playtest.require(Playtest.screen(mc).keyPressed(event), "Ignored radial keyboard input " + key);
         Playtest.screen(mc).keyReleased(event);
     }

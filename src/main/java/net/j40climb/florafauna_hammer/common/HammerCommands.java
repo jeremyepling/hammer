@@ -1,6 +1,8 @@
 package net.j40climb.florafauna_hammer.common;
 
+import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.context.CommandContext;
 import net.j40climb.florafauna_hammer.HammerMod;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningModeData;
@@ -26,25 +28,37 @@ public final class HammerCommands {
                 (source.getEntity() instanceof ServerPlayer p && p.isCreative());
     }
 
+    // 26.4 serializes the command tree. Creative mode depends on the executing player.
+    private static Command<CommandSourceStack> devCommand(Command<CommandSourceStack> action) {
+        return context -> {
+            if (!hasDevPermission(context.getSource())) {
+                throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownCommand().create();
+            }
+            return action.run(context);
+        };
+    }
+
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
                 Commands.literal("florafauna")
+                        //? if <26.4 {
                         .requires(HammerCommands::hasDevPermission)
+                        //?}
                         .then(Commands.literal("ability")
                                 .then(Commands.literal("lightning")
-                                        .executes(HammerCommands::toggleLightning))
+                                        .executes(devCommand(HammerCommands::toggleLightning)))
                                 .then(Commands.literal("teleport")
-                                        .executes(HammerCommands::toggleTeleport))
+                                        .executes(devCommand(HammerCommands::toggleTeleport)))
                                 .then(Commands.literal("throw")
-                                        .executes(HammerCommands::toggleThrow))
+                                        .executes(devCommand(HammerCommands::toggleThrow)))
                                 .then(Commands.literal("mining")
-                                        .executes(HammerCommands::toggleMining))
+                                        .executes(devCommand(HammerCommands::toggleMining)))
                                 .then(Commands.literal("config")
-                                        .executes(HammerCommands::toggleToolConfig))
+                                        .executes(devCommand(HammerCommands::toggleToolConfig)))
                                 .then(Commands.literal("all")
-                                        .executes(HammerCommands::addAllAbilities))
+                                        .executes(devCommand(HammerCommands::addAllAbilities)))
                                 .then(Commands.literal("clear")
-                                        .executes(HammerCommands::clearAllAbilities))));
+                                        .executes(devCommand(HammerCommands::clearAllAbilities)))));
     }
 
     private static int toggleLightning(CommandContext<CommandSourceStack> context) {

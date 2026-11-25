@@ -6,6 +6,7 @@ import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
+import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.StringRepresentable;
@@ -15,7 +16,7 @@ public enum HammerAction implements StringRepresentable {
     LIGHTNING("lightning"), TELEPORT("teleport"), SCAN("scan");
 
     public static final Codec<HammerAction> CODEC = StringRepresentable.fromEnum(HammerAction::values);
-    public static final StreamCodec<ByteBuf, HammerAction> STREAM_CODEC = ByteBufCodecs.fromCodec(CODEC);
+    public static final StreamCodec<ByteBuf, HammerAction> STREAM_CODEC = ByteBufCodecs.fromCodec(CODEC, NbtAccounter::defaultQuota);
     private final String name;
 
     HammerAction(String name) {

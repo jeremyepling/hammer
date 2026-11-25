@@ -1,21 +1,26 @@
 # Hammer
 
-A standalone Fabric and NeoForge mod for Minecraft 26.1 and 26.3, built with Java 25. Install the Hammer jar for your Minecraft version and loader on the server and client. Fabric installations also need Fabric API. Find the Hammer in Tools & Utilities or use `/give @s florafauna:hammer`. Existing Hammer items, ability components and projectiles keep their original identifiers. The split FloraFauna mod (0.0.2 or later) is optional.
+Hammer supports Minecraft 26.1 and 26.3 on Fabric and NeoForge, plus Minecraft 26.4 Pre-Release 1 on Fabric. Build and run it with Java 25. Install the Hammer jar for your Minecraft version and loader on the server and client. Fabric installations also need Fabric API. Find the Hammer in Tools & Utilities or use `/give @s florafauna:hammer`. Existing Hammer items, ability components and projectiles keep their original identifiers. The split FloraFauna mod (0.0.2 or later) is optional.
 
 ## Build and test
 
-Stonecutter builds four targets from this checkout, with 26.1 NeoForge as the editable default. Gameplay and UI live in `src/main`. Loader entrypoints, event adapters, and loader-specific resources live in `src/fabric` and `src/neoforge`. ModDevGradle builds the NeoForge targets and Loom builds the Fabric targets. Stonecutter evaluates loader conditions such as `//? if neoforge {` and Minecraft version conditions such as `//? if <26.3 {` before Java compilation. For example, both loaders use the same mining-speed calculation, with a NeoForge break-speed event and a Fabric mixin calling it.
+Stonecutter builds the four stable targets and the Fabric preview from this checkout, with 26.1 NeoForge as the editable default. Gameplay and UI live in `src/main`. Loader entrypoints, event adapters, and loader-specific resources live in `src/fabric` and `src/neoforge`. ModDevGradle builds the NeoForge targets and Loom builds the Fabric targets. Stonecutter evaluates loader conditions such as `//? if neoforge {` and Minecraft version conditions such as `//? if <26.3 {` before Java compilation. For example, both loaders use the same mining-speed calculation, with a NeoForge break-speed event and a Fabric mixin calling it.
 
 ```sh
 ./gradlew :26.1-fabric:build :26.1-fabric:runGameTestServer
 ./gradlew :26.3-fabric:build :26.3-fabric:runGameTestServer
+./gradlew :26.4-fabric:build :26.4-fabric:runGameTestServer
 ./gradlew :26.1-neoforge:build :26.1-neoforge:runGameTestServer
 ./gradlew :26.3-neoforge:build :26.3-neoforge:runGameTestServer
 ```
 
 Use `gradlew.bat` on Windows. Pick the matching jar from `versions/<minecraft>-<loader>/build/libs/` for the Minecraft version you play. To run a single server test, pass `-PgameTestFilter=florafauna_hammer:hammer_tunnel_gaps` to the version's GameTest task.
 
-For client checks, run `./scripts/test_hammer.ps1 -Target 26.1 -SourceWorld <closed-save-directory>` in PowerShell 7. Add `-Loader fabric` to run against Fabric. Choose a save from the same Minecraft version. Both targets support the quarry and stair-outline scenarios. You can also select `-Scenario powers`, `radial`, or `progression`. Disposable saves, screenshots and logs are under `.tmp/world-playtests/`.
+The `26.4-fabric` target pins Minecraft `26.4-pre-1`, Fabric Loader `0.20.1` and Fabric API `0.167.1+26.4`. Use `-Target 26.4 -Loader fabric` for client checks on a copy of a Pre-Release 1 save.
+
+NeoForge’s [snapshot-10 port](https://github.com/neoforged/NeoForge/commit/e9012cb09aea9261144cdf41d62b5a63f1e5f5dd) currently fails to compile upstream. The experimental `26.4-neoforge` target requires a working development build of that loader for Minecraft `26.4-snapshot-10`. With a matching userdev artifact in Maven Local, run `./gradlew -PpreviewNeoVersion=<local-version> :26.4-neoforge:build`.
+
+For client checks, run `./scripts/test_hammer.ps1 -Target 26.1 -SourceWorld <closed-save-directory>` in PowerShell 7. Add `-Loader fabric` to run against Fabric. Choose a save from the same Minecraft version. The runner supports the quarry and stair-outline scenarios. You can also select `-Scenario powers`, `radial`, or `progression`. Disposable saves, screenshots and logs are under `.tmp/world-playtests/`.
 
 With FloraFauna's Stonecutter companion support, run `./gradlew -PdevMods=all :26.3-neoforge:runClient` from FloraFauna to play with all three mods. Use `:26.1-neoforge:runClient` for 26.1. Pass `-PhammerDir=<checkout>` and `-PfrenchiesDir=<checkout>` when using feature worktrees.
 

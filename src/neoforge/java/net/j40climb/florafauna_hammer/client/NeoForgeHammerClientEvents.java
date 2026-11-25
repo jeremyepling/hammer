@@ -55,10 +55,12 @@ public final class NeoForgeHammerClientEvents {
         }
     }
 
+    //? if <26.4 {
     @SubscribeEvent
     public static void pipeline(RegisterRenderPipelinesEvent event) {
         event.registerPipeline(MultiBlockOutlineRenderer.PREVIEW_PIPELINE);
     }
+    //?}
 
     @SubscribeEvent
     public static void outlines(ExtractBlockOutlineRenderStateEvent event) {

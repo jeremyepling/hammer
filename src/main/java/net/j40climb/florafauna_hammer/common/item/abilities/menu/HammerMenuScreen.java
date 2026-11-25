@@ -239,8 +239,14 @@ public final class HammerMenuScreen extends Screen {
     }
 
     @Override
+    //? if <26.4 {
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(g, mouseX, mouseY, partialTick);
+    //?} else {
+    /*public void extractRenderState(GuiGraphicsExtractor g) {
+        super.extractRenderState(g);
+        int mouseX = g.mouseX(), mouseY = g.mouseY();
+    *///?}
         int headingY = cy - outer - 25;
         int detailY = cy + outer + 7;
         if (tool.is(HammerRegistry.HAMMER.get())) g.centeredText(font, stage.label(), width / 2, headingY - 10, 0xfff4e9ff);
@@ -281,7 +287,12 @@ public final class HammerMenuScreen extends Screen {
         }
 
         @Override
+        //? if <26.4 {
         protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        //?} else {
+        /*protected void extractContents(GuiGraphicsExtractor g) {
+            int mouseX = g.mouseX(), mouseY = g.mouseY();
+        *///?}
             int radius = inner - 2;
             int edge = isMouseOver(mouseX, mouseY) || isFocused() ? 0xffffdf94 : 0xffa88c69;
             RadialButton.drawHub(g, centerX, cy, radius, 0xff251d2d, edge);

@@ -7,7 +7,7 @@ ext.loader = 'fabric'
 apply from: rootProject.file('gradle/shared.gradle')
 
 repositories { maven { url = 'https://maven.fabricmc.net/' } }
-def fabricLoader = '0.19.5'
+def fabricLoader = findProperty('fabric_loader_version') ?: '0.19.5'
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${fabricLoader}"
@@ -52,7 +52,7 @@ loom {
 }
 
 processResources {
-    def metadata = [version: project.version, minecraft_version: minecraft_version, fabric_loader_version: fabricLoader, fabric_api_version: fabric_api_version]
+    def metadata = [version: project.version, minecraft_version: findProperty('minecraft_version_range') ?: minecraft_version, fabric_loader_version: fabricLoader, fabric_api_version: fabric_api_version]
     inputs.properties metadata
     filesMatching('fabric.mod.json') { expand metadata }
 }

@@ -7,13 +7,22 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 //?} else {
 /*import com.mojang.renderpearl.api.pipeline.BlendFunction;
 import com.mojang.renderpearl.api.pipeline.ColorTargetState;
-import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+*///?}
+//? if >=26.3 && <26.4 {
+/*import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 *///?}
 import net.j40climb.florafauna_hammer.HammerMod;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningModeData;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.client.Minecraft;
+//? if <26.4 {
 import net.minecraft.client.renderer.RenderPipelines;
+//?} else {
+/*import com.mojang.renderpearl.api.pipeline.CompareOp;
+import com.mojang.renderpearl.api.pipeline.DepthStencilState;
+import net.minecraft.client.renderer.pipeline.RenderPipelines;
+import net.minecraft.client.renderer.pipeline.variant.LineRenderPipelineVariant;
+*///?}
 //? if <26.3 {
 import net.minecraft.client.renderer.ShapeRenderer;
 //?}
@@ -42,6 +51,7 @@ import java.util.Optional;
 /** Draws the additional outlines for a multi-block mining tool. */
 public class MultiBlockOutlineRenderer {
     // Show planned placements and newly exposed lava even inside the unbroken wall.
+    //? if <26.4 {
     public static final RenderPipeline PREVIEW_PIPELINE = RenderPipeline.builder(RenderPipelines.LINES_SNIPPET)
             .withLocation(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "pipeline/hammer_preview"))
             .withDepthStencilState(Optional.empty())
@@ -49,6 +59,14 @@ public class MultiBlockOutlineRenderer {
             .build();
     private static final RenderType PREVIEW_LINES = RenderType.create("florafauna_hammer_preview",
             RenderSetup.builder(PREVIEW_PIPELINE).createRenderSetup());
+    //?} else {
+    /*private static final LineRenderPipelineVariant PREVIEW_VARIANT = new LineRenderPipelineVariant(
+            "florafauna_hammer_preview", new ColorTargetState(BlendFunction.TRANSLUCENT),
+            new DepthStencilState(CompareOp.ALWAYS_PASS, false), false);
+    private static final RenderType PREVIEW_LINES = RenderType.create("florafauna_hammer_preview",
+            RenderSetup.builder(stage -> RenderPipelines.lines(new RenderPipelines.LinesParameters(PREVIEW_VARIANT, stage)))
+                    .createRenderSetup());
+    *///?}
     private static final int PLACEMENT_COLOR = 0xD92DE7B1;
     private static final int LAVA_COLOR = 0xFFFF780D;
     private static final Map<Direction, VoxelShape> FACE_OUTLINES = Shapes.rotateAll(Shapes.box(0, 0, 0, 1, 1, 0.005));
@@ -57,7 +75,11 @@ public class MultiBlockOutlineRenderer {
     private static int previewCount;
     private static long previewTick;
 
+    //? if <26.4 {
     public static void drawHud(GuiGraphicsExtractor gui, DeltaTracker delta) {
+    //?} else {
+    /*public static void drawHud(GuiGraphicsExtractor gui) {
+    *///?}
         var mc = Minecraft.getInstance();
         //? if <26.3 {
         if (mc.options.hideGui || mc.player == null || mc.screen != null

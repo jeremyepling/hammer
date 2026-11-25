@@ -6,7 +6,14 @@ import net.j40climb.florafauna_hammer.common.item.projectile.ThrownItemRenderer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+//? if <26.4 {
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+//?} else {
+/*import net.minecraft.client.core.registries.BuiltInClientRegistries;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.core.Registry;
+import net.j40climb.florafauna_hammer.common.item.projectile.ThrownItemEntity;
+*///?}
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.j40climb.florafauna_hammer.client.*;
 import net.j40climb.florafauna_hammer.common.item.abilities.multiblock.MultiBlockOutlineRenderer;
@@ -40,7 +47,12 @@ public final class ClientSetup implements net.fabricmc.api.ClientModInitializer 
     @Override
     public void onInitializeClient() {
         HammerKey.registerAll(KeyMappingHelper::registerKeyMapping);
+        //? if <26.4 {
         EntityRendererRegistry.register(HammerRegistry.THROWN_ITEM.get(), ThrownItemRenderer::new);
+        //?} else {
+        /*Registry.register(BuiltInClientRegistries.ENTITY_RENDERER, HammerRegistry.THROWN_ITEM_KEY.identifier(),
+                (EntityRendererProvider<ThrownItemEntity>) ThrownItemRenderer::new);
+        *///?}
         ClientPlayNetworking.registerGlobalReceiver(HammerCorePayload.TYPE, (packet, context) -> HammerAbilityFeedback.receive(packet));
         ClientPlayNetworking.registerGlobalReceiver(SeismicScanPayload.TYPE, (packet, context) -> SeismicScanEffects.receive(packet));
         ClientTickEvents.END_CLIENT_TICK.register(client -> {

@@ -10,6 +10,7 @@ import net.minecraft.client.gui.screens.BackupConfirmScreen;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.MouseButtonInfo;
 import net.minecraft.network.chat.CommonComponents;
@@ -32,6 +33,14 @@ import java.util.function.Predicate;
 
 /** Drives one real client and its integrated server. Only loaded by the playtest run. */
 public final class Playtest {
+    static KeyEvent keyEvent(int key) {
+        //? if <26.4 {
+        return new KeyEvent(key, 0, 0);
+        //?} else {
+        /*return new KeyEvent(key, 0, 0, false);
+        *///?}
+    }
+
     private static final Logger LOG = LogUtils.getLogger();
     private static final long TIMEOUT = Duration.ofSeconds(35).toNanos();
     private static Playtest active;
@@ -87,7 +96,7 @@ public final class Playtest {
         }
         verifyCopyDirectory(mc);
         for (var child : screen.children()) {
-            if (child instanceof Button button && button.active && button.visible && label.equals(button.getMessage())) {
+            if (child instanceof Button button && button.isActive() && label.equals(button.getMessage())) {
                 var click = new MouseButtonEvent(button.getX() + button.getWidth() / 2.0,
                         button.getY() + button.getHeight() / 2.0, new MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0));
                 require(screen.mouseClicked(click, false), "World upgrade button did not accept click");

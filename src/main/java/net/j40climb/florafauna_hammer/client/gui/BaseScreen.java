@@ -3,7 +3,11 @@ package net.j40climb.florafauna_hammer.client.gui;
 import net.j40climb.florafauna_hammer.HammerMod;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+//? if <26.4 {
 import net.minecraft.client.renderer.RenderPipelines;
+//?} else {
+/*import net.minecraft.client.gui.GuiPipeline;
+*///?}
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
@@ -74,18 +78,34 @@ public abstract class BaseScreen extends Screen {
     protected abstract void initContent();
 
     @Override
+    //? if <26.4 {
     public void extractBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         // 1. Render blurred background
         super.extractBackground(guiGraphics, mouseX, mouseY, partialTick);
+    //?} else {
+    /*public void extractBackground(GuiGraphicsExtractor guiGraphics) {
+        super.extractBackground(guiGraphics);
+    *///?}
 
         // 2. Render the GUI texture
+        //? if <26.4 {
         guiGraphics.blit(RenderPipelines.GUI_TEXTURED, guiTexture, leftPos, topPos, 0, 0, IMAGE_WIDTH, IMAGE_HEIGHT, 256, 256);
+        //?} else {
+        /*guiGraphics.blit(GuiPipeline.TEXTURED, guiTexture, leftPos, topPos, 0, 0, IMAGE_WIDTH, IMAGE_HEIGHT, 256, 256);
+        *///?}
     }
 
     @Override
+    //? if <26.4 {
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         // 1. Render background and widgets
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+    //?} else {
+    /*public void extractRenderState(GuiGraphicsExtractor guiGraphics) {
+        super.extractRenderState(guiGraphics);
+        int mouseX = guiGraphics.mouseX(), mouseY = guiGraphics.mouseY();
+        float partialTick = guiGraphics.partialTicks();
+    *///?}
 
         // 2. Let subclass render custom content (including title)
         renderContent(guiGraphics, mouseX, mouseY, partialTick);
