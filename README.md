@@ -146,7 +146,7 @@ Straight cuts advance into the face you strike. On a wall, strike the bottom of 
 
 Stair modes cut five columns with five blocks of clearance per column before placing the tread. A side hit builds ascending stairs from one block below the center, or descending stairs from two below. A floor hit in descending mode follows the player's horizontal heading. Ceiling hits and ascending floor hits mine just the center. Teal stair outlines show planned placements through rock and across air gaps before you strike.
 
-Orange outlines mark the faces of planned mining blocks that touch source or flowing lava. Check the marked side, ceiling, floor or end wall before striking. Selecting Single Block narrows this warning to the targeted block. The mining preview shows the selected mode and planned block count. The warning leaves the final decision to the player.
+Violet outlines show the additional blocks the Hammer will break. Orange outlines mark the faces of planned mining blocks that touch source or flowing lava. Check the marked side, ceiling, floor or end wall before striking. Selecting Single Block narrows this warning to the targeted block. The warning leaves the final decision to the player.
 
 Shapeless mode groups matching stone and deepslate ore variants. An iron vein can cross the stone–deepslate boundary. Copper touching that vein stays in place. Select **Exact block** in the Hammer settings to stop at the variant boundary.
 
