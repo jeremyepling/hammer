@@ -12,7 +12,7 @@ import net.minecraft.world.item.ItemDisplayContext;
 
 /**
  * Renderer for ThrownItemEntity.
- * Renders the thrown item's model oriented in the direction of travel.
+ * Renders the thrown Hammer with its handle toward the thrower.
  */
 public class ThrownItemRenderer extends EntityRenderer<ThrownItemEntity, ThrownItemRenderState> {
 
@@ -33,9 +33,11 @@ public class ThrownItemRenderer extends EntityRenderer<ThrownItemEntity, ThrownI
     @Override
     public void extractRenderState(ThrownItemEntity entity, ThrownItemRenderState state, float partialTick) {
         super.extractRenderState(entity, state, partialTick);
-        state.xRot = entity.getXRot(partialTick);
+        // The arrow already reverses yaw while homing. Mirror the outbound pitch
+        // so the Hammer has the return pose for the opposite direction of travel.
+        float pitch = entity.getXRot(partialTick);
+        state.xRot = entity.isNoPhysics() ? pitch : -pitch;
         state.yRot = entity.getYRot(partialTick);
-        state.isReturning = entity.isReturning();
 
         // Extract the item render state
         this.itemModelResolver.updateForNonLiving(state.item, entity.getThrownItem(), ItemDisplayContext.GROUND, entity);
@@ -49,14 +51,12 @@ public class ThrownItemRenderer extends EntityRenderer<ThrownItemEntity, ThrownI
 
         poseStack.pushPose();
 
-        // Rotate to face direction of travel
-        // First rotate around Y to match horizontal direction
+        // Apply the horizontal heading and flight tilt to the ground model.
         //? if <26.3 {
         poseStack.mulPose(Axis.YP.rotationDegrees(state.yRot + 90.0f));
         //?} else {
         /*poseStack.rotateDegrees(Axis.YP, state.yRot + 90.0f);
         *///?}
-        // Then pitch forward 90 degrees so item points in direction of travel
         //? if <26.3 {
         poseStack.mulPose(Axis.XP.rotationDegrees(state.xRot + 90.0f));
         //?} else {
