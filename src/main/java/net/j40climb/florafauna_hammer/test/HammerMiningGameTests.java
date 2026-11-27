@@ -192,6 +192,14 @@ final class HammerMiningGameTests {
                         }
                     }
                 }
+                if (mode == MiningShape.FLAT_3X3) {
+                    var preview = MultiBlockPatterns.plan(player, player.getMainHandItem(), center, face);
+                    h.assertTrue(preview.blocks().size() == 9 && Set.copyOf(preview.blocks()).equals(expected.keySet()),
+                            "3×3 hovering planned the wrong blocks for " + face + ": " + preview.blocks());
+                    for (BlockPos pos : preview.blocks()) {
+                        check(h, pos, Blocks.STONE, "Preparing the outline changed a block");
+                    }
+                }
                 swing(player, center, face, heading);
                 for (BlockPos pos : BlockPos.betweenClosed(center.offset(-7, -8, -7), center.offset(7, 9, 7))) {
                     Block block = expected.getOrDefault(pos, Blocks.STONE);
