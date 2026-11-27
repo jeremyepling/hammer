@@ -13,6 +13,7 @@ public final class FabricHammerOutlines {
 
     public static void register() {
         RenderPipelines.register(MultiBlockOutlineRenderer.PREVIEW_PIPELINE);
+        MultiBlockOutlineRenderer.registerIrisPreviewPipeline();
         LevelRenderEvents.AFTER_BLOCK_OUTLINE_EXTRACTION.register((context, hit) -> {
             var state = context.levelState();
             if (state.blockOutlineRenderState != null && hit instanceof BlockHitResult block) {

@@ -113,6 +113,7 @@ In **Abilities**, select Auto, Strip, Path, Till, Throw, Lightning, Surface Tele
 Use the [client runner](#build-and-test) with the indicated `-Scenario`, target, loader and a closed save for that Minecraft version.
 
 - **Choose both wheels in one hold** (`-Scenario radial`). With Seismic Scan unlocked, hold **C**, click Walkable Tunnel on the left, click Seismic Scan on the right, hover over Throw, then release. The wheels close and the held Hammer keeps Walkable and Scan on the server. The scripted client remaps **C** to **V** and also checks the reverse click order and a hover-only release.
+- **Preview all nine blocks before a swing** (`-Scenario hammer`, GameTest `hammer:hammer_flat_3x3_all_faces`). Select 3×3 and aim at the center of a stone wall. The scripted client checks violet lines on the eight neighboring outlines and along the seams around the targeted block before mining. The headless test checks the nine planned positions and the eventual cut for every face.
 - **Match the descending stair preview across air** (`-Scenario stair-outline`). Start mining the wall face, then aim at the top of the same block during the swing. The client preview must retain the five original wall-facing tread positions across the gap. The server must place a north-facing cobblestone stair at each previewed position. To check the visible teal outline through rock, use `-Scenario hammer`. Its quarry also checks the five treads, cleared headroom and intact stone around the cut.
 - **Cut across a two-column cave** (GameTest `hammer:hammer_tunnel_gaps`). Strike the wall in ascending and descending stair modes. The swing bridges the two empty columns, preserves bedrock in its path and ends at the fifth column. This headless case checks the resulting blocks. Use the client checks above for the preview.
 
@@ -145,7 +146,7 @@ Straight cuts advance into the face you strike. On a wall, strike the bottom of 
 
 Stair modes cut five columns with five blocks of clearance per column before placing the tread. A side hit builds ascending stairs from one block below the center, or descending stairs from two below. A floor hit in descending mode follows the player's horizontal heading. Ceiling hits and ascending floor hits mine just the center. Teal stair outlines show planned placements through rock and across air gaps before you strike.
 
-Orange outlines mark the faces of planned mining blocks that touch source or flowing lava. Check the marked side, ceiling, floor or end wall before striking. Selecting Single Block narrows this warning to the targeted block. The mining preview shows the selected mode and planned block count. The warning leaves the final decision to the player.
+Violet outlines show the additional blocks the Hammer will break. Orange outlines mark the faces of planned mining blocks that touch source or flowing lava. Check the marked side, ceiling, floor or end wall before striking. Selecting Single Block narrows this warning to the targeted block. The warning leaves the final decision to the player.
 
 Shapeless mode groups matching stone and deepslate ore variants. An iron vein can cross the stone–deepslate boundary. Copper touching that vein stays in place. Select **Exact block** in the Hammer settings to stop at the variant boundary.
 

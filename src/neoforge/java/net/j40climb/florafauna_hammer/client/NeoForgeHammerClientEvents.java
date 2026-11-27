@@ -57,6 +57,7 @@ public final class NeoForgeHammerClientEvents {
     @SubscribeEvent
     public static void pipeline(RegisterRenderPipelinesEvent event) {
         event.registerPipeline(MultiBlockOutlineRenderer.PREVIEW_PIPELINE);
+        MultiBlockOutlineRenderer.registerIrisPreviewPipeline();
     }
 
     @SubscribeEvent

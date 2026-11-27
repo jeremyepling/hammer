@@ -1,5 +1,6 @@
 package net.j40climb.florafauna_hammer.common.item.abilities.multiblock;
 
+import com.mojang.logging.LogUtils;
 //? if <26.3 {
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
@@ -48,6 +49,22 @@ public class MultiBlockOutlineRenderer {
     private static final int PLACEMENT_COLOR = 0xD92DE7B1;
     private static final int LAVA_COLOR = 0xFFFF780D;
     private static final Map<Direction, VoxelShape> FACE_OUTLINES = Shapes.rotateAll(Shapes.box(0, 0, 0, 1, 1, 0.005));
+
+    /** Lets Iris shade the through-wall warning and placement lines without changing their depth state. */
+    public static void registerIrisPreviewPipeline() {
+        try {
+            // Iris is an optional client mod. Its public API uses each target's native RenderPipeline type.
+            Class<?> api = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
+            Class<?> program = Class.forName("net.irisshaders.iris.api.v0.IrisProgram");
+            var assignPipeline = api.getMethod("assignPipeline", RenderPipeline.class, program);
+            assignPipeline.invoke(api.getMethod("getInstance").invoke(null),
+                    PREVIEW_PIPELINE, program.getField("LINES").get(null));
+        } catch (ClassNotFoundException | NoSuchMethodException ignored) {
+            // Stock rendering or an Iris release without pipeline registration.
+        } catch (ReflectiveOperationException | LinkageError error) {
+            LogUtils.getLogger().warn("Could not register Hammer's preview pipeline with Iris", error);
+        }
+    }
 
     public static MultiBlockPatterns.Plan previewPlan(Player player, BlockPos target, Direction hoveredFace) {
         return MultiBlockPatterns.plan(player, player.getMainHandItem(), target, MultiBlockVisualFeedback.previewFace(target, hoveredFace));
@@ -116,9 +133,11 @@ public class MultiBlockOutlineRenderer {
         var target = preview.target();
         poseStack.pushPose();
         poseStack.translate(target.getX() - camera.x, target.getY() - camera.y, target.getZ() - camera.z);
+        // Match the vanilla outline's transparency mode. Iris maps the classic line pipeline.
+        var miningLines = Minecraft.getInstance().gameRenderer.useImprovedTransparency()
+                ? RenderTypes.linesTranslucentNoDepthWrite() : RenderTypes.linesTranslucent();
         for (VoxelShape outline : preview.outlines()) {
-            collector.submitShapeOutline(poseStack, outline, RenderTypes.linesTranslucentNoDepthWrite(),
-                    0xADBCA0E8, 2.0F, translucent);
+            collector.submitShapeOutline(poseStack, outline, miningLines, 0xADBCA0E8, 2.0F, translucent);
         }
         for (VoxelShape stair : preview.placements()) {
             collector.submitShapeOutline(poseStack, stair, PREVIEW_LINES, PLACEMENT_COLOR, 2.5F, translucent);

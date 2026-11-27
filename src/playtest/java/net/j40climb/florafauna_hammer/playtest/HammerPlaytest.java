@@ -97,6 +97,7 @@ public final class HammerPlaytest {
         setVeinPreference(t, false);
         setLighting(t, true);
         setLighting(t, false);
+        HammerAreaOutlinePlaytest.steps(t, WALL);
         interruptSwing(t);
         HammerSinglePlaytest.steps(t, WALL);
         minePlane(t, WALL, Direction.NORTH, "wall");
