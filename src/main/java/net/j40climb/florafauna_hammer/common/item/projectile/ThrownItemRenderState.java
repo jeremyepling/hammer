@@ -11,5 +11,4 @@ public class ThrownItemRenderState extends EntityRenderState {
     public float xRot;
     public float yRot;
     public final ItemStackRenderState item = new ItemStackRenderState();
-    public boolean isReturning;
 }
