@@ -24,7 +24,6 @@ public final class NeoForgeHammerClientEvents {
     @SubscribeEvent
     public static void layers(RegisterGuiLayersEvent event) {
         event.registerBelowAll(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "ore_echoes"), SeismicScanEffects::drawMarkers);
-        event.registerAboveAll(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "mining_preview"), MultiBlockOutlineRenderer::drawHud);
     }
 
     @SubscribeEvent

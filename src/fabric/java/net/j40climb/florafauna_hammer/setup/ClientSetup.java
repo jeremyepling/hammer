@@ -10,7 +10,6 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.j40climb.florafauna_hammer.client.*;
-import net.j40climb.florafauna_hammer.common.item.abilities.multiblock.MultiBlockOutlineRenderer;
 import net.j40climb.florafauna_hammer.common.item.abilities.multiblock.MultiBlockVisualFeedback;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.HammerCorePayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.SeismicScanPayload;
@@ -54,7 +53,6 @@ public final class ClientSetup implements net.fabricmc.api.ClientModInitializer 
             SeismicScanEffects.tick();
         });
         HudElementRegistry.addFirst(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "ore_echoes"), SeismicScanEffects::drawMarkers);
-        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "mining_preview"), MultiBlockOutlineRenderer::drawHud);
         FabricLoader.getInstance().getObjectShare().put(HammerMod.MOD_ID + ":tool_diagnostics",
                 (BiConsumer<ItemStack, List<String>>) HammerDiagnostics::append);
         FabricHammerOutlines.register();

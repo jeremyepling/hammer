@@ -65,8 +65,6 @@
   "message.hammer.scan.charge": "Seismic Scan needs %s charge",
   "message.hammer.scan.empty": "No ore echoes detected",
   "message.hammer.scan.found": "Ore deposits detected: %s",
-  "hud.hammer.mining_preview.single": "%1$s · 1 block",
-  "hud.hammer.mining_preview": "%1$s · %2$s blocks",
   "gui.hammer.hammer_menu.teleport": "Teleport",
   "gui.hammer.hammer_menu.scan": "Scan",
   "gui.hammer.hammer_menu.shape.single": "Single",
