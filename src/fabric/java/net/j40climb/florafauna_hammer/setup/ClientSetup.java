@@ -23,6 +23,9 @@ import net.j40climb.florafauna_hammer.common.item.abilities.networking.SeismicSc
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.ItemStack;
+import java.util.List;
+import java.util.function.BiConsumer;
 
 public final class ClientSetup implements net.fabricmc.api.ClientModInitializer {
 
@@ -46,6 +49,8 @@ public final class ClientSetup implements net.fabricmc.api.ClientModInitializer 
 
     @Override
     public void onInitializeClient() {
+        net.fabricmc.loader.api.FabricLoader.getInstance().getObjectShare().put(
+                "florafauna_hammer:tool_diagnostics", (BiConsumer<ItemStack, List<String>>) HammerDiagnostics::append);
         HammerKey.registerAll(KeyMappingHelper::registerKeyMapping);
         //? if <26.4 {
         EntityRendererRegistry.register(HammerRegistry.THROWN_ITEM.get(), ThrownItemRenderer::new);
