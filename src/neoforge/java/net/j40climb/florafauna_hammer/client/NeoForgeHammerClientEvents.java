@@ -67,12 +67,12 @@ public final class NeoForgeHammerClientEvents {
         //? if <26.3 {
         event.addCustomRenderer((state, buffers, pose, translucent, level) -> {
             if (translucent == state.isTranslucent()) MultiBlockOutlineRenderer.draw(preview, buffers, pose, level.cameraRenderState.pos);
-            return false;
+            return preview.replacesVanillaOutline();
         });
         //?} else {
         /*event.addCustomRenderer((state, collector, pose, level) -> {
             MultiBlockOutlineRenderer.draw(preview, collector, pose, level.cameraRenderState.pos, state.isTranslucent());
-            return false;
+            return preview.replacesVanillaOutline();
         });
         *///?}
     }

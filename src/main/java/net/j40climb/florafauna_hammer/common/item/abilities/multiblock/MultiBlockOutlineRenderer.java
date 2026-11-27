@@ -32,6 +32,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -70,7 +71,8 @@ public class MultiBlockOutlineRenderer {
         return MultiBlockPatterns.plan(player, player.getMainHandItem(), target, MultiBlockVisualFeedback.previewFace(target, hoveredFace));
     }
 
-    public record Preview(BlockPos target, List<VoxelShape> outlines, List<VoxelShape> placements, List<LavaExposure> lava) {}
+    public record Preview(BlockPos target, List<VoxelShape> outlines, List<VoxelShape> placements,
+                          List<LavaExposure> lava, boolean replacesVanillaOutline) {}
 
     public static Preview extract(Level level, BlockHitResult hit, CollisionContext collision) {
         Player player = Minecraft.getInstance().player;
@@ -80,17 +82,26 @@ public class MultiBlockOutlineRenderer {
 
         BlockPos target = hit.getBlockPos();
         var plan = previewPlan(player, target, hit.getDirection());
-        List<VoxelShape> outlines = plan.blocks().stream()
-                .filter(pos -> !pos.equals(target))
-                .map(pos -> level.getBlockState(pos)
-                        .getShape(level, pos, collision)
-                        //? if <26.3 {
-                        .move(pos.getX(), pos.getY(), pos.getZ()))
-                        //?} else {
-                        /*.move(pos.getX() - target.getX(), pos.getY() - target.getY(), pos.getZ() - target.getZ()))
-                        *///?}
-                .filter(shape -> !shape.isEmpty())
-                .toList();
+        List<VoxelShape> outlines = new ArrayList<>();
+        VoxelShape targetOutline = Shapes.empty();
+        for (BlockPos pos : plan.blocks()) {
+            VoxelShape shape = level.getBlockState(pos).getShape(level, pos, collision);
+            if (shape.isEmpty()) continue;
+            //? if <26.3 {
+            shape = shape.move(pos.getX(), pos.getY(), pos.getZ());
+            //?} else {
+            /*shape = shape.move(pos.getX() - target.getX(), pos.getY() - target.getY(), pos.getZ() - target.getZ());
+            *///?}
+            if (pos.equals(target)) {
+                targetOutline = shape;
+            } else {
+                outlines.add(shape);
+            }
+        }
+        boolean replacesVanillaOutline = !outlines.isEmpty() && !targetOutline.isEmpty();
+        if (replacesVanillaOutline) {
+            outlines.add(targetOutline);
+        }
         List<VoxelShape> placements = plan.stairs().stream()
                 .map(pos -> plan.stairState().getShape(level, pos)
                         //? if <26.3 {
@@ -100,7 +111,7 @@ public class MultiBlockOutlineRenderer {
                         *///?}
                 .toList();
         List<LavaExposure> lava = LavaExposure.find(level, plan);
-        return new Preview(target, outlines, placements, lava);
+        return new Preview(target, List.copyOf(outlines), placements, lava, replacesVanillaOutline);
     }
 
     private static BlockPos renderedTarget;

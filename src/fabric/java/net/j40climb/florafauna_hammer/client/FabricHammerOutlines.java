@@ -30,6 +30,7 @@ public final class FabricHammerOutlines {
                 //?} else {
                 /*MultiBlockOutlineRenderer.draw(preview, context.submitNodeCollector(), context.poseStack(), state.cameraRenderState.pos, outline.isTranslucent());
                 *///?}
+                return !preview.replacesVanillaOutline();
             }
             return true;
         });
