@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "id": "florafauna_hammer",
+  "id": "hammer",
   "version": "${version}",
-  "name": "FloraFauna Hammer",
+  "name": "Hammer",
   "description": "A configurable mining and throwing hammer.",
   "authors": [
     "j40climb"
@@ -18,14 +18,14 @@
     ]
   },
   "mixins": [
-    "florafauna_hammer.mixins.json",
-    "florafauna_hammer.fabric.mixins.json",
+    "hammer.mixins.json",
+    "hammer.fabric.mixins.json",
     {
-      "config": "florafauna_hammer.fabric.client.mixins.json",
+      "config": "hammer.fabric.client.mixins.json",
       "environment": "client"
     }
   ],
-  "accessWidener": "florafauna_hammer.accesswidener",
+  "accessWidener": "hammer.accesswidener",
   "depends": {
     "fabricloader": ">=${fabric_loader_version}",
     "fabric-api": ">=${fabric_api_version}",

@@ -34,7 +34,7 @@ final class HammerPowerGameTests {
     private static final BlockPos FLOOR = new BlockPos(8, 8, 8);
 
     static void register(HammerGameTests.Registrar tests) {
-        var mine = Identifier.fromNamespaceAndPath("florafauna", "test_hammer_mine");
+        var mine = Identifier.fromNamespaceAndPath("hammer", "test_hammer_mine");
         HammerGameTests.registerStructureTest(tests, "hammer_grounded_lightning_and_teleport", mine, 100, HammerPowerGameTests::groundedAbilities);
         HammerGameTests.registerStructureTest(tests, "hammer_slam_impact", mine, 100, HammerPowerGameTests::slamImpact);
         HammerGameTests.registerStructureTest(tests, "hammer_slam_rejections", mine, 100, HammerPowerGameTests::slamRejections);

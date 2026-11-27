@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:smithing_transform",
+  "base": {
+    "${typeKey}": "${loader}:components",
+    "${itemKey}": "hammer:hammer",
+    "components": {
+      "hammer:hammer_stage": "forged"
+    }
+  },
+  "addition": "hammer:resonance_core",
+  "result": {
+    "id": "hammer:hammer",
+    "components": {
+      "hammer:hammer_stage": "resonant",
+      "hammer:hammer_charge": 64
+    }
+  }
+}

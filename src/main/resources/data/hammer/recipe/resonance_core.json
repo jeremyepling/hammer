@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " A ",
+    "RDR",
+    " Q "
+  ],
+  "key": {
+    "A": "minecraft:amethyst_shard",
+    "R": "minecraft:redstone",
+    "D": "minecraft:diamond",
+    "Q": "minecraft:quartz"
+  },
+  "result": {
+    "id": "hammer:resonance_core"
+  }
+}

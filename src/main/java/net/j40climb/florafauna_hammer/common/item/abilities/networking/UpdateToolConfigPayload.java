@@ -25,7 +25,7 @@ import net.minecraft.world.item.enchantment.Enchantments;
 public record UpdateToolConfigPayload(int slot, ToolConfig config) implements CustomPacketPayload {
 
     public static final Type<UpdateToolConfigPayload> TYPE = new Type<>(
-            Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "update_tool_config")
+            Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "update_tool_config")
     );
 
     public static final StreamCodec<ByteBuf, UpdateToolConfigPayload> STREAM_CODEC = StreamCodec.composite(

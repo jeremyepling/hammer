@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " B ",
+    "ENE",
+    " B "
+  ],
+  "key": {
+    "B": "minecraft:blaze_rod",
+    "E": "minecraft:ender_eye",
+    "N": "minecraft:netherite_ingot"
+  },
+  "result": {
+    "id": "hammer:tempest_core"
+  }
+}

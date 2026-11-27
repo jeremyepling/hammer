@@ -28,7 +28,7 @@ import java.util.function.Supplier;
 import static net.j40climb.florafauna_hammer.common.item.hammer.HammerItem.HAMMER_MATERIAL;
 
 public final class HammerRegistry extends PlatformRegistration {
-    public static final ResourceKey<EntityType<?>> THROWN_ITEM_KEY = ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "thrown_item"));
+    public static final ResourceKey<EntityType<?>> THROWN_ITEM_KEY = ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "thrown_item"));
 
     public static final Supplier<EntityType<ThrownItemEntity>> THROWN_ITEM = entity(THROWN_ITEM_KEY,
             () -> EntityType.Builder.<ThrownItemEntity>of(ThrownItemEntity::new, MobCategory.MISC)

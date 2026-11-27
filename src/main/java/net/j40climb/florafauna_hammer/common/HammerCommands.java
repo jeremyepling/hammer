@@ -28,7 +28,7 @@ public final class HammerCommands {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
-                Commands.literal("florafauna")
+                Commands.literal(HammerMod.MOD_ID)
                         .requires(HammerCommands::hasDevPermission)
                         .then(Commands.literal("ability")
                                 .then(Commands.literal("lightning")
@@ -79,23 +79,23 @@ public final class HammerCommands {
         CommandSourceStack source = context.getSource();
 
         if (!(source.getEntity() instanceof ServerPlayer player)) {
-            source.sendFailure(Component.translatable("command.florafauna.ability.player_only"));
+            source.sendFailure(Component.translatable("command.hammer.ability.player_only"));
             return 0;
         }
 
         ItemStack stack = player.getMainHandItem();
         if (stack.isEmpty()) {
-            source.sendFailure(Component.translatable("command.florafauna.ability.no_item"));
+            source.sendFailure(Component.translatable("command.hammer.ability.no_item"));
             return 0;
         }
 
         if (stack.has(componentType)) {
             stack.remove(componentType);
-            source.sendSuccess(() -> Component.translatable("command.florafauna.ability.removed", abilityName)
+            source.sendSuccess(() -> Component.translatable("command.hammer.ability.removed", abilityName)
                     .withStyle(style -> style.withColor(0xE74C3C)), false);
         } else {
             stack.set(componentType, defaultValue);
-            source.sendSuccess(() -> Component.translatable("command.florafauna.ability.added", abilityName)
+            source.sendSuccess(() -> Component.translatable("command.hammer.ability.added", abilityName)
                     .withStyle(style -> style.withColor(0x2ECC71)), false);
         }
         return 1;
@@ -105,13 +105,13 @@ public final class HammerCommands {
         CommandSourceStack source = context.getSource();
 
         if (!(source.getEntity() instanceof ServerPlayer player)) {
-            source.sendFailure(Component.translatable("command.florafauna.ability.player_only"));
+            source.sendFailure(Component.translatable("command.hammer.ability.player_only"));
             return 0;
         }
 
         ItemStack stack = player.getMainHandItem();
         if (stack.isEmpty()) {
-            source.sendFailure(Component.translatable("command.florafauna.ability.no_item"));
+            source.sendFailure(Component.translatable("command.hammer.ability.no_item"));
             return 0;
         }
 
@@ -122,10 +122,10 @@ public final class HammerCommands {
         stack.set(HammerRegistry.MULTI_BLOCK_MINING.get(), MiningModeData.DEFAULT);
         stack.set(HammerRegistry.TOOL_CONFIG.get(), ToolConfig.DEFAULT);
         stack.set(HammerRegistry.RIGHT_CLICK_ACTION.get(),
-                new RightClickAction(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "throwable_ability")));
+                new RightClickAction(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "throwable_ability")));
         stack.set(HammerRegistry.MULTI_TOOL_ABILITY.get(), MultiToolAbilityData.DEFAULT);
 
-        source.sendSuccess(() -> Component.translatable("command.florafauna.ability.all_added")
+        source.sendSuccess(() -> Component.translatable("command.hammer.ability.all_added")
                 .withStyle(style -> style.withColor(0x2ECC71)), false);
         return 1;
     }
@@ -134,13 +134,13 @@ public final class HammerCommands {
         CommandSourceStack source = context.getSource();
 
         if (!(source.getEntity() instanceof ServerPlayer player)) {
-            source.sendFailure(Component.translatable("command.florafauna.ability.player_only"));
+            source.sendFailure(Component.translatable("command.hammer.ability.player_only"));
             return 0;
         }
 
         ItemStack stack = player.getMainHandItem();
         if (stack.isEmpty()) {
-            source.sendFailure(Component.translatable("command.florafauna.ability.no_item"));
+            source.sendFailure(Component.translatable("command.hammer.ability.no_item"));
             return 0;
         }
 
@@ -153,7 +153,7 @@ public final class HammerCommands {
         stack.remove(HammerRegistry.RIGHT_CLICK_ACTION.get());
         stack.remove(HammerRegistry.MULTI_TOOL_ABILITY.get());
 
-        source.sendSuccess(() -> Component.translatable("command.florafauna.ability.all_cleared")
+        source.sendSuccess(() -> Component.translatable("command.hammer.ability.all_cleared")
                 .withStyle(style -> style.withColor(0xF39C12)), false);
         return 1;
     }

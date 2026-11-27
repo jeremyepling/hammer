@@ -1,6 +1,6 @@
 # Hammer
 
-A standalone Fabric and NeoForge mod for Minecraft 26.1 and 26.3, built with Java 25. Install the Hammer jar for your Minecraft version and loader on the server and client. Fabric installations also need Fabric API. Find the Hammer in Tools & Utilities or use `/give @s florafauna:hammer`. Existing Hammer items, ability components and projectiles keep their original identifiers. The split FloraFauna mod (0.0.2 or later) is optional.
+A standalone Fabric and NeoForge mod for Minecraft 26.1 and 26.3, built with Java 25. Install the Hammer jar for your Minecraft version and loader on the server and client. Fabric installations also need Fabric API. Find the Hammer in Tools & Utilities or use `/give @s hammer:hammer`. Hammer items, ability components and projectiles use the `hammer` namespace. Saves from older releases reference different IDs, so back up those worlds before updating. The split FloraFauna mod (0.0.2 or later) is optional.
 
 ## Build and test
 
@@ -13,7 +13,7 @@ Stonecutter builds four targets from this checkout, with 26.1 NeoForge as the ed
 ./gradlew :26.3-neoforge:build :26.3-neoforge:runGameTestServer
 ```
 
-Use `gradlew.bat` on Windows. Pick the matching jar from `versions/<minecraft>-<loader>/build/libs/` for the Minecraft version you play. To run a single server test, pass `-PgameTestFilter=florafauna_hammer:hammer_tunnel_gaps` to the version's GameTest task.
+Use `gradlew.bat` on Windows. Pick the matching jar from `versions/<minecraft>-<loader>/build/libs/` for the Minecraft version you play. To run a single server test, pass `-PgameTestFilter=hammer:hammer_tunnel_gaps` to the version's GameTest task.
 
 For client checks, run `./scripts/test_hammer.ps1 -Target 26.1 -SourceWorld <closed-save-directory>` in PowerShell 7. Add `-Loader fabric` to run against Fabric. Choose a save from the same Minecraft version. Both targets support the quarry and stair-outline scenarios. You can also select `-Scenario powers`, `radial`, or `progression`. Disposable saves, screenshots and logs are under `.tmp/world-playtests/`.
 
@@ -114,7 +114,7 @@ Use the [client runner](#build-and-test) with the indicated `-Scenario`, target,
 
 - **Choose both wheels in one hold** (`-Scenario radial`). With Seismic Scan unlocked, hold **C**, click Walkable Tunnel on the left, click Seismic Scan on the right, hover over Throw, then release. The wheels close and the held Hammer keeps Walkable and Scan on the server. The scripted client remaps **C** to **V** and also checks the reverse click order and a hover-only release.
 - **Match the descending stair preview across air** (`-Scenario stair-outline`). Start mining the wall face, then aim at the top of the same block during the swing. The client preview must retain the five original wall-facing tread positions across the gap. The server must place a north-facing cobblestone stair at each previewed position. To check the visible teal outline through rock, use `-Scenario hammer`. Its quarry also checks the five treads, cleared headroom and intact stone around the cut.
-- **Cut across a two-column cave** (GameTest `florafauna_hammer:hammer_tunnel_gaps`). Strike the wall in ascending and descending stair modes. The swing bridges the two empty columns, preserves bedrock in its path and ends at the fifth column. This headless case checks the resulting blocks. Use the client checks above for the preview.
+- **Cut across a two-column cave** (GameTest `hammer:hammer_tunnel_gaps`). Strike the wall in ascending and descending stair modes. The swing bridges the two empty columns, preserves bedrock in its path and ends at the fifth column. This headless case checks the resulting blocks. Use the client checks above for the preview.
 
 ## Seismic Scan
 
@@ -167,10 +167,10 @@ In Auto, the `RIGHT_CLICK_ACTION` component configures the fallback after block 
 
 | Ability ID | Effect |
 |------------|--------|
-| `florafauna:throwable_ability` | Throw the item as a projectile |
-| `florafauna:multi_block_mining` | Cycle mining mode |
-| `florafauna:lightning_ability` | Spawn lightning at target block |
-| `florafauna:teleport_surface_ability` | Teleport to surface |
+| `hammer:throwable_ability` | Throw the item as a projectile |
+| `hammer:multi_block_mining` | Cycle mining mode |
+| `hammer:lightning_ability` | Spawn lightning at target block |
+| `hammer:teleport_surface_ability` | Teleport to surface |
 
 ## Multi-Tool Ability
 
@@ -194,7 +194,7 @@ ItemStack stack = new ItemStack(myItem);
 stack.set(HammerRegistry.MULTI_BLOCK_MINING.get(), MiningModeData.DEFAULT);
 stack.set(HammerRegistry.TOOL_CONFIG.get(), ToolConfig.DEFAULT);
 stack.set(HammerRegistry.LIGHTNING_ABILITY.get(), Unit.INSTANCE);
-stack.set(HammerRegistry.RIGHT_CLICK_ACTION.get(), new RightClickAction(Identifier.fromNamespaceAndPath("florafauna", "throwable_ability")));
+stack.set(HammerRegistry.RIGHT_CLICK_ACTION.get(), new RightClickAction(Identifier.fromNamespaceAndPath("hammer", "throwable_ability")));
 stack.set(HammerRegistry.MULTI_TOOL_ABILITY.get(), MultiToolAbilityData.DEFAULT);
 ```
 

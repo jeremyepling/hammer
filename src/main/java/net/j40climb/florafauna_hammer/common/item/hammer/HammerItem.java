@@ -84,7 +84,7 @@ public class HammerItem extends Item {
                 .component(HammerRegistry.TELEPORT_SURFACE_ABILITY.get(), Unit.INSTANCE)
                 .component(HammerRegistry.HAMMER_STAGE.get(), HammerStage.FORGED)
                 .component(HammerRegistry.THROWABLE_ABILITY.get(), ThrowableAbilityData.DEFAULT)
-                .component(HammerRegistry.RIGHT_CLICK_ACTION.get(), new RightClickAction(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "throwable_ability")))
+                .component(HammerRegistry.RIGHT_CLICK_ACTION.get(), new RightClickAction(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "throwable_ability")))
                 .component(HammerRegistry.MULTI_TOOL_ABILITY.get(), MultiToolAbilityData.DEFAULT)
                 .component(HammerRegistry.HAMMER_ACTION.get(), HammerAction.AUTO)
                 .component(DataComponents.UNBREAKABLE, Unit.INSTANCE)
@@ -196,8 +196,8 @@ public class HammerItem extends Item {
         ToolConfig toolConfig = itemStack.getOrDefault(HammerRegistry.TOOL_CONFIG.get(), ToolConfig.DEFAULT);
         tooltipComponents.accept(toolConfig.withMiningSpeed(toolConfig.effectiveSpeed(stage)).speedDescription());
         if (stage.capacity() > 0) {
-            tooltipComponents.accept(Component.translatable("tooltip.florafauna.hammer.charge", charge(itemStack), stage.capacity()));
-            tooltipComponents.accept(Component.translatable("tooltip.florafauna.hammer.ore_strike", Component.keybind("key.florafauna.throw_item")));
+            tooltipComponents.accept(Component.translatable("tooltip.hammer.hammer.charge", charge(itemStack), stage.capacity()));
+            tooltipComponents.accept(Component.translatable("tooltip.hammer.hammer.ore_strike", Component.keybind("key.hammer.throw_item")));
         }
         super.appendHoverText(itemStack, context, tooltipDisplay, tooltipComponents, tooltipFlag);
     }

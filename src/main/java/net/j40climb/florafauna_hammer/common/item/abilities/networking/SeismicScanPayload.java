@@ -14,7 +14,7 @@ import java.util.List;
 public record SeismicScanPayload(Identifier dimension, BlockPos origin, boolean started,
                                 List<BlockPos> markers) implements CustomPacketPayload {
     public static final Type<SeismicScanPayload> TYPE = new Type<>(
-            Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "seismic_scan"));
+            Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "seismic_scan"));
     public static final StreamCodec<ByteBuf, SeismicScanPayload> STREAM_CODEC = StreamCodec.composite(
             Identifier.STREAM_CODEC, SeismicScanPayload::dimension,
             BlockPos.STREAM_CODEC, SeismicScanPayload::origin,

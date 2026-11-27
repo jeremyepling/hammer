@@ -26,7 +26,7 @@ final class HammerSlamLifecycleGameTests {
     private static final InteractionHand HAND = InteractionHand.MAIN_HAND;
 
     static void register(HammerGameTests.Registrar tests) {
-        var mine = Identifier.fromNamespaceAndPath("florafauna", "test_hammer_mine");
+        var mine = Identifier.fromNamespaceAndPath("hammer", "test_hammer_mine");
         HammerGameTests.registerStructureTest(tests, "hammer_slam_lifecycle", mine, 100, HammerSlamLifecycleGameTests::lifecycle);
         HammerGameTests.registerStructureTest(tests, "hammer_slam_timeout", mine, 220, HammerSlamLifecycleGameTests::timeout);
         HammerGameTests.registerStructureTest(tests, "hammer_slam_players_and_falls", mine, 100, HammerSlamLifecycleGameTests::playersAndFalls);

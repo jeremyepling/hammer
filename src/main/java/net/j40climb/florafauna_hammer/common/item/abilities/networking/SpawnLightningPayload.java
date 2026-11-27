@@ -23,7 +23,7 @@ import net.minecraft.world.phys.Vec3;
 
 public record SpawnLightningPayload(BlockPos targetPos) implements CustomPacketPayload {
 
-    public static final CustomPacketPayload.Type<SpawnLightningPayload> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "spawn_lightning_payload"));
+    public static final CustomPacketPayload.Type<SpawnLightningPayload> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "spawn_lightning_payload"));
     public static final StreamCodec<ByteBuf, SpawnLightningPayload> STREAM_CODEC = StreamCodec.composite(
             BlockPos.STREAM_CODEC,
             SpawnLightningPayload::targetPos,

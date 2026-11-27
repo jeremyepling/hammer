@@ -29,8 +29,8 @@ neoForge {
         gameTestServer {
             type = 'gameTestServer'
             gameDirectory = file('run/gameTestServer')
-            systemProperty 'neoforge.enabledGameTestNamespaces', 'florafauna_hammer'
-            programArguments.addAll '--tests', providers.gradleProperty('gameTestFilter').getOrElse('florafauna_hammer:*')
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'hammer'
+            programArguments.addAll '--tests', providers.gradleProperty('gameTestFilter').getOrElse('hammer:*')
         }
         if (playtestId) {
             worldPlaytest {
@@ -38,14 +38,14 @@ neoForge {
                 def directory = rootProject.file(".tmp/world-playtests/${playtestId}/hammer")
                 gameDirectory = directory
                 programArguments.addAll '--width', '960', '--height', '540', '--quickPlaySingleplayer', 'playtest'
-                systemProperty 'florafauna.playtest.directory', directory.absolutePath
-                systemProperty 'florafauna.playtest.scenario', providers.gradleProperty('playtestScenario').getOrElse('hammer')
-                systemProperty 'florafauna.playtest.phase', playtestPhase
+                systemProperty 'hammer.playtest.directory', directory.absolutePath
+                systemProperty 'hammer.playtest.scenario', providers.gradleProperty('playtestScenario').getOrElse('hammer')
+                systemProperty 'hammer.playtest.phase', playtestPhase
             }
         }
     }
     mods {
-        florafauna_hammer {
+        hammer {
             sourceSet sourceSets.main
             if (playtestId) sourceSet sourceSets.playtest
         }

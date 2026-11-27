@@ -113,8 +113,8 @@ public record ToolConfig(boolean fortune, boolean silkTouch, MiningSpeed miningS
     }
 
     public Component speedDescription() {
-        return Component.translatable("tooltip.florafauna.hammer.speed",
-                Component.translatable("gui.florafauna.tool_config.speed." + miningSpeed.getSerializedName()));
+        return Component.translatable("tooltip.hammer.hammer.speed",
+                Component.translatable("gui.hammer.tool_config.speed." + miningSpeed.getSerializedName()));
     }
 
     public MiningSpeed effectiveSpeed(HammerStage stage) {

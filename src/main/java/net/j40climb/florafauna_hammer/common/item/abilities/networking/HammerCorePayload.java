@@ -13,7 +13,7 @@ import net.minecraft.world.InteractionHand;
 public record HammerCorePayload(int playerId, InteractionHand hand, Cue cue) implements CustomPacketPayload {
     public enum Cue { SCAN, DESCENT, IMPACT, LIGHTNING, WINDUP, READY, RELEASE, STOP_THROW, STOP_SLAM, MODE }
 
-    public static final Type<HammerCorePayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "hammer_core"));
+    public static final Type<HammerCorePayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "hammer_core"));
     private static final StreamCodec<FriendlyByteBuf, Cue> CUE_CODEC =
             StreamCodec.of((buf, cue) -> buf.writeEnum(cue), buf -> buf.readEnum(Cue.class));
     public static final StreamCodec<FriendlyByteBuf, HammerCorePayload> STREAM_CODEC = StreamCodec.composite(

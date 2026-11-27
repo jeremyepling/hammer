@@ -21,11 +21,11 @@ if (playtestId && (!(playtestId ==~ /[0-9a-f]{32}/) || !(playtestPhase in ['1', 
 }
 
 loom {
-    accessWidenerPath = file('target/main/resources/florafauna_hammer.accesswidener')
+    accessWidenerPath = file('target/main/resources/hammer.accesswidener')
     mods {
-        florafauna_hammer { sourceSet sourceSets.main }
+        hammer { sourceSet sourceSets.main }
         if (playtestId) {
-            florafauna_hammer_playtest { sourceSet sourceSets.playtest }
+            hammer_playtest { sourceSet sourceSets.playtest }
         }
     }
     runs {
@@ -33,7 +33,7 @@ loom {
             server()
             runDir 'run/gameTestServer'
             vmArg '-Dfabric-api.gametest'
-            vmArg "-Dfabric-api.gametest.filter=${providers.gradleProperty('gameTestFilter').getOrElse('florafauna_hammer:*')}"
+            vmArg "-Dfabric-api.gametest.filter=${providers.gradleProperty('gameTestFilter').getOrElse('hammer:*')}"
             vmArg "-Dfabric-api.gametest.report-file=${file('build/test-results/gametest.xml')}"
         }
         if (playtestId) {
@@ -43,9 +43,9 @@ loom {
                 def directory = rootProject.file(".tmp/world-playtests/${playtestId}/hammer")
                 runDir project.relativePath(directory)
                 programArgs '--width', '960', '--height', '540', '--quickPlaySingleplayer', 'playtest'
-                vmArg "-Dflorafauna.playtest.directory=${directory}"
-                vmArg "-Dflorafauna.playtest.scenario=${providers.gradleProperty('playtestScenario').getOrElse('hammer')}"
-                vmArg "-Dflorafauna.playtest.phase=${playtestPhase}"
+                vmArg "-Dhammer.playtest.directory=${directory}"
+                vmArg "-Dhammer.playtest.scenario=${providers.gradleProperty('playtestScenario').getOrElse('hammer')}"
+                vmArg "-Dhammer.playtest.phase=${playtestPhase}"
             }
         }
     }

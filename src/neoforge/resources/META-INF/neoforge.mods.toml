@@ -1,28 +1,28 @@
 license="MIT"
 
 [[mods]]
-modId="florafauna_hammer"
+modId="hammer"
 version="${version}"
-displayName="FloraFauna Hammer"
+displayName="Hammer"
 authors="j40climb"
 description="A configurable mining and throwing hammer."
 
 [[mixins]]
-config="florafauna_hammer.mixins.json"
+config="hammer.mixins.json"
 
-[[dependencies.florafauna_hammer]]
+[[dependencies.hammer]]
 modId="neoforge"
 type="required"
 versionRange="${neo_version_range}"
 side="BOTH"
 
-[[dependencies.florafauna_hammer]]
+[[dependencies.hammer]]
 modId="minecraft"
 type="required"
 versionRange="${minecraft_version_range}"
 side="BOTH"
 
-[[dependencies.florafauna_hammer]]
+[[dependencies.hammer]]
 modId="florafauna"
 type="incompatible"
 versionRange="[0,0.0.2)"

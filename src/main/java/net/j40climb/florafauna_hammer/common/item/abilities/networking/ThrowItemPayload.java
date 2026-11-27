@@ -23,7 +23,7 @@ import net.minecraft.world.item.ItemStack;
 public record ThrowItemPayload(boolean mainHand) implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<ThrowItemPayload> TYPE =
-            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "throw_item"));
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "throw_item"));
 
     public static final StreamCodec<ByteBuf, ThrowItemPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.BOOL,

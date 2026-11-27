@@ -2,6 +2,7 @@ package net.j40climb.florafauna_hammer.common.item.abilities.data;
 
 import com.mojang.serialization.Codec;
 import io.netty.buffer.ByteBuf;
+import net.j40climb.florafauna_hammer.HammerMod;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
@@ -24,5 +25,5 @@ public record RightClickAction(Identifier abilityId) {
     /**
      * No action on right-click.
      */
-    public static final RightClickAction NONE = new RightClickAction(Identifier.parse("florafauna:none"));
+    public static final RightClickAction NONE = new RightClickAction(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "none"));
 }

@@ -20,7 +20,7 @@ public enum CycleMiningModePayload implements CustomPacketPayload {
     INSTANCE;
 
     public static final Type<CycleMiningModePayload> TYPE =
-            new Type<>(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "cycle_mining_mode"));
+            new Type<>(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "cycle_mining_mode"));
 
     public static final StreamCodec<ByteBuf, CycleMiningModePayload> STREAM_CODEC = StreamCodec.unit(INSTANCE);
 

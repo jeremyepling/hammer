@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.Set;
 
 final class HammerMiningGameTests {
-    private static final Identifier MINE = Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "test_hammer_mine");
+    private static final Identifier MINE = Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "test_hammer_mine");
 
     static void register(HammerGameTests.Registrar tests) {
         for (MiningShape mode : MiningShape.values()) {

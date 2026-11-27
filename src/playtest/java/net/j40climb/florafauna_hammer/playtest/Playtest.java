@@ -175,12 +175,12 @@ public final class Playtest {
     }
 
     static void tick() {
-        String path = System.getProperty("florafauna.playtest.directory");
+        String path = System.getProperty("hammer.playtest.directory");
         if (path == null) return;
         Minecraft mc = Minecraft.getInstance();
         if (active == null) {
-            active = new Playtest(Path.of(path), System.getProperty("florafauna.playtest.scenario"),
-                    Integer.getInteger("florafauna.playtest.phase"));
+            active = new Playtest(Path.of(path), System.getProperty("hammer.playtest.scenario"),
+                    Integer.getInteger("hammer.playtest.phase"));
         }
         if (!active.finished) active.advance(mc);
     }

@@ -15,7 +15,7 @@ import net.minecraft.world.level.Level;
 public enum TeleportToSurfacePayload implements CustomPacketPayload {
     INSTANCE;
 
-    public static final Type<TeleportToSurfacePayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "teleport_to_surface_payload"));
+    public static final Type<TeleportToSurfacePayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "teleport_to_surface_payload"));
     public static final StreamCodec<ByteBuf, TeleportToSurfacePayload> STREAM_CODEC = StreamCodec.unit(INSTANCE);
 
     public static void onServerReceived(final TeleportToSurfacePayload data, final ServerPlayer player) {
@@ -45,13 +45,13 @@ public enum TeleportToSurfacePayload implements CustomPacketPayload {
                 double centerZ = scanPos.getZ() + 0.5;
 
                 player.teleportTo(centerX, centerY, centerZ);
-                player.sendOverlayMessage(Component.translatable("ability.florafauna.teleport_surface.success"));
+                player.sendOverlayMessage(Component.translatable("ability.hammer.teleport_surface.success"));
                 return;
             }
         }
 
         // No surface found
-        player.sendOverlayMessage(Component.translatable("ability.florafauna.teleport_surface.no_surface"));
+        player.sendOverlayMessage(Component.translatable("ability.hammer.teleport_surface.no_surface"));
     }
 
     @Override

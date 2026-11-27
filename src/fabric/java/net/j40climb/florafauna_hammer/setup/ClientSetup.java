@@ -48,8 +48,8 @@ public final class ClientSetup implements net.fabricmc.api.ClientModInitializer 
             MultiBlockVisualFeedback.onClientTick();
             SeismicScanEffects.tick();
         });
-        HudElementRegistry.addFirst(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "ore_echoes"), SeismicScanEffects::drawMarkers);
-        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "mining_preview"), MultiBlockOutlineRenderer::drawHud);
+        HudElementRegistry.addFirst(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "ore_echoes"), SeismicScanEffects::drawMarkers);
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "mining_preview"), MultiBlockOutlineRenderer::drawHud);
         FabricHammerOutlines.register();
     }
 }

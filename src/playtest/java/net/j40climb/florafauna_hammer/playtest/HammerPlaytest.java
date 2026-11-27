@@ -272,7 +272,7 @@ public final class HammerPlaytest {
     }
 
     private static Button configButton(Minecraft mc, String setting) {
-        return button(mc, Component.translatable("gui.florafauna.tool_config." + setting));
+        return button(mc, Component.translatable("gui.hammer.tool_config." + setting));
     }
 
     static Button button(Minecraft mc, Component label) {

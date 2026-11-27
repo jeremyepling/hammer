@@ -38,7 +38,7 @@ import net.minecraft.world.level.storage.TagValueOutput;
 
 final class HammerAbilityGameTests {
     static void register(HammerGameTests.Registrar tests) {
-        HammerGameTests.registerTest(tests, "hammer_legacy_saved_stack", HammerAbilityGameTests::legacySavedStack);
+        HammerGameTests.registerTest(tests, "hammer_namespaced_saved_stack", HammerAbilityGameTests::namespacedSavedStack);
         HammerGameTests.registerTest(tests, "hammer_fresh_and_configured_loot", HammerAbilityGameTests::checkConfigurations);
         HammerGameTests.registerTest(tests, "hammer_block_action_dispatch", HammerAbilityGameTests::checkBlockActions);
         HammerGameTests.registerTest(tests, "hammer_throw_single_item_and_reload", HammerAbilityGameTests::checkThrow);
@@ -53,13 +53,12 @@ final class HammerAbilityGameTests {
         return player;
     }
 
-    private static void legacySavedStack(GameTestHelper helper) {
-        // This represents an inventory stack saved before Hammer became its own mod.
+    private static void namespacedSavedStack(GameTestHelper helper) {
         var saved = JsonParser.parseString("""
-                {"id":"florafauna:hammer", "count":1, "components":{
-                  "florafauna:hammer_charge":17, "florafauna:hammer_action":"strip",
-                  "florafauna:multi_block_mining":{"shape":"stairs_down","radius":0,"maxBlocksToBreak":24},
-                  "florafauna:tool_config":{"fortune":false,"silkTouch":true,"miningSpeed":"standard"}
+                {"id":"hammer:hammer", "count":1, "components":{
+                  "hammer:hammer_charge":17, "hammer:hammer_action":"strip",
+                  "hammer:multi_block_mining":{"shape":"stairs_down","radius":0,"maxBlocksToBreak":24},
+                  "hammer:tool_config":{"fortune":false,"silkTouch":true,"miningSpeed":"standard"}
                 }}
                 """);
         var ops = helper.getLevel().registryAccess().createSerializationContext(JsonOps.INSTANCE);
@@ -69,7 +68,7 @@ final class HammerAbilityGameTests {
         var mode = stack.get(HammerRegistry.MULTI_BLOCK_MINING.get());
         helper.assertTrue(mode.shape() == MiningShape.TUNNEL_DOWN && mode.maxBlocksToBreak() == 24
                 && stack.get(HammerRegistry.TOOL_CONFIG.get()).equals(new ToolConfig(false, true, MiningSpeed.STANDARD)),
-                "Legacy mining settings did not decode with their original defaults");
+                "Saved mining settings did not decode with their original defaults");
         helper.assertTrue(stack.is(ItemTags.AXES) && stack.is(ItemTags.HOES) && stack.is(ItemTags.SHOVELS)
                 && stack.is(ItemTags.PICKAXES), "The installed Hammer must belong to all four tool tags");
         helper.succeed();

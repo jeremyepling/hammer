@@ -54,12 +54,12 @@ public final class SeismicScanner {
         long now = player.level().getServer().overworld().getGameTime();
         UUID id = player.getUUID();
         if (pending.contains(id) || cooldowns.getOrDefault(id, 0L) > now) {
-            player.sendOverlayMessage(Component.translatable("message.florafauna_hammer.scan.cooldown"));
+            player.sendOverlayMessage(Component.translatable("message.hammer.scan.cooldown"));
             return false;
         }
         int charge = HammerItem.charge(stack);
         if (charge < CHARGE_COST) {
-            player.sendOverlayMessage(Component.translatable("message.florafauna_hammer.scan.charge", CHARGE_COST));
+            player.sendOverlayMessage(Component.translatable("message.hammer.scan.charge", CHARGE_COST));
             return false;
         }
         stack.set(HammerRegistry.HAMMER_CHARGE.get(), charge - CHARGE_COST);
@@ -100,8 +100,8 @@ public final class SeismicScanner {
                 var markers = scan.search.markers();
                 HammerNetwork.sendToPlayer(owner, new SeismicScanPayload(scan.level.dimension().identifier(),
                         scan.origin, false, markers));
-                owner.sendOverlayMessage(markers.isEmpty() ? Component.translatable("message.florafauna_hammer.scan.empty")
-                        : Component.translatable("message.florafauna_hammer.scan.found", markers.size()));
+                owner.sendOverlayMessage(markers.isEmpty() ? Component.translatable("message.hammer.scan.empty")
+                        : Component.translatable("message.hammer.scan.found", markers.size()));
             } else {
                 queue.addLast(scan);
             }

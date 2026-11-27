@@ -43,11 +43,11 @@ import java.util.Optional;
 public class MultiBlockOutlineRenderer {
     // Show planned placements and newly exposed lava even inside the unbroken wall.
     public static final RenderPipeline PREVIEW_PIPELINE = RenderPipeline.builder(RenderPipelines.LINES_SNIPPET)
-            .withLocation(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "pipeline/hammer_preview"))
+            .withLocation(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "pipeline/hammer_preview"))
             .withDepthStencilState(Optional.empty())
             .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
             .build();
-    private static final RenderType PREVIEW_LINES = RenderType.create("florafauna_hammer_preview",
+    private static final RenderType PREVIEW_LINES = RenderType.create("hammer_preview",
             RenderSetup.builder(PREVIEW_PIPELINE).createRenderSetup());
     private static final int PLACEMENT_COLOR = 0xD92DE7B1;
     private static final int LAVA_COLOR = 0xFFFF780D;
@@ -69,8 +69,8 @@ public class MultiBlockOutlineRenderer {
         var stack = mc.player.getMainHandItem();
         if (!stack.has(HammerRegistry.MULTI_BLOCK_MINING.get())) return;
         var mining = MiningModeData.effective(stack);
-        var shape = Component.translatable("mining_shape.florafauna." + mining.shape().getSerializedName());
-        var key = previewCount == 1 ? "hud.florafauna_hammer.mining_preview.single" : "hud.florafauna_hammer.mining_preview";
+        var shape = Component.translatable("mining_shape.hammer." + mining.shape().getSerializedName());
+        var key = previewCount == 1 ? "hud.hammer.mining_preview.single" : "hud.hammer.mining_preview";
         var label = Component.translatable(key, shape, previewCount);
         gui.text(mc.font, label, (gui.guiWidth() - mc.font.width(label)) / 2, gui.guiHeight() / 2 + 17, 0xFFDEC9FF);
     }
