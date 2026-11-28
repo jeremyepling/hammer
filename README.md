@@ -15,6 +15,8 @@ Stonecutter builds four targets from this checkout, with 26.1 NeoForge as the ed
 
 Use `gradlew.bat` on Windows. Pick the matching jar from `versions/<minecraft>-<loader>/build/libs/` for the Minecraft version you play. To run a single server test, pass `-PgameTestFilter=hammer:hammer_tunnel_gaps` to the version's GameTest task.
 
+Both loaders write a GameTest XML report to `versions/<target>/run/gameTestServer/gametest.xml`. Each CI target uploads that report, its server log, any crash report, and the JUnit XML available from the run in the `hammer-tests-<target>` artifact.
+
 For client checks, run `./scripts/test_hammer.ps1 -Target 26.1 -SourceWorld <closed-save-directory>` in PowerShell 7. Add `-Loader fabric` to run against Fabric. Choose a save from the same Minecraft version. Both targets support the quarry and stair-outline scenarios. You can also select `-Scenario powers`, `radial`, or `progression`. Disposable saves, screenshots and logs are under `.tmp/world-playtests/`.
 
 With FloraFauna's Stonecutter companion support, run `./gradlew -PdevMods=all :26.3-neoforge:runClient` from FloraFauna to play with all three mods. Use `:26.1-neoforge:runClient` for 26.1. Pass `-PhammerDir=<checkout>` and `-PfrenchiesDir=<checkout>` when using feature worktrees.
