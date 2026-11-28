@@ -23,6 +23,7 @@ public final class HammerAbilityFeedback {
         var level = Minecraft.getInstance().level;
         if (level == null || !(level.getEntity(packet.playerId()) instanceof Player player)) return;
         switch (packet.cue()) {
+            case CHARGE -> charge(level, player, packet.hand());
             case READY, RELEASE, MODE, SCAN, LIGHTNING -> burst(level, player, packet.hand(), packet.cue());
             default -> { } // Older servers also sent cues for the animated item model.
         }
@@ -46,6 +47,27 @@ public final class HammerAbilityFeedback {
         }
         Vec3 across = p.calculateViewVector(0, p.getYRot()).cross(UP);
         return p.getEyePosition().add(p.getViewVector(1).scale(0.54)).add(across.scale(right ? 0.36 : -0.36)).add(0, -0.36, 0);
+    }
+
+    private static void charge(ClientLevel level, Player player, InteractionHand hand) {
+        Vec3 center = handPosition(player, hand);
+        Vec3 forward = player.getViewVector(1);
+        Vec3 sideways = player.calculateViewVector(0, player.getYRot()).cross(UP);
+        Vec3 vertical = sideways.cross(forward);
+        var random = level.getRandom();
+        double angle = random.nextDouble() * Math.PI * 2;
+        for (int i = 0; i < 2; i++) {
+            double radius = 0.14 + random.nextDouble() * 0.15;
+            Vec3 offset = sideways.scale(Math.cos(angle) * radius)
+                    .add(vertical.scale(Math.sin(angle) * radius))
+                    .add(forward.scale(0.08 + random.nextDouble() * 0.10));
+            Vec3 start = center.add(offset);
+            // Electric sparks advance at a quarter of the supplied speed for two or three ticks.
+            Vec3 inward = offset.scale(-1.3);
+            level.addParticle(ParticleTypes.ELECTRIC_SPARK,
+                    start.x, start.y, start.z, inward.x, inward.y, inward.z);
+            angle += Math.PI;
+        }
     }
 
     private static void burst(ClientLevel level, Player player, InteractionHand hand, Cue cue) {

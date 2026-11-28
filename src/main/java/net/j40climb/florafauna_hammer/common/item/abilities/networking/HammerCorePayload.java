@@ -11,7 +11,7 @@ import net.minecraft.world.InteractionHand;
 
 /** One-shot sounds and particles. Keep the original cue ordinals for existing clients. */
 public record HammerCorePayload(int playerId, InteractionHand hand, Cue cue) implements CustomPacketPayload {
-    public enum Cue { SCAN, DESCENT, IMPACT, LIGHTNING, WINDUP, READY, RELEASE, STOP_THROW, STOP_SLAM, MODE }
+    public enum Cue { SCAN, DESCENT, IMPACT, LIGHTNING, WINDUP, READY, RELEASE, STOP_THROW, STOP_SLAM, MODE, CHARGE }
 
     public static final Type<HammerCorePayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "hammer_core"));
     private static final StreamCodec<FriendlyByteBuf, Cue> CUE_CODEC =
