@@ -53,7 +53,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: hammer-${{ matrix.target }}
-          path: versions/${{ matrix.target }}/build/libs/*.jar
+          path: versions/${{ matrix.target }}/build/libs/hammer-${{ matrix.target }}-*.jar
+          if-no-files-found: error
           retention-days: 14
 
       - name: Upload test diagnostics

@@ -1,6 +1,6 @@
 group = 'net.j40climb.florafauna_hammer'
-version = "0.0.1+${minecraft_version}"
-base.archivesName = "${mod_id}-${loader}"
+version = mod_version
+base.archivesName = "${mod_id}-${minecraft_version}-${loader}"
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 repositories { mavenCentral() }
 

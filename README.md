@@ -13,7 +13,7 @@ Stonecutter builds four targets from this checkout, with 26.1 NeoForge as the ed
 ./gradlew :26.3-neoforge:build :26.3-neoforge:runGameTestServer
 ```
 
-Use `gradlew.bat` on Windows. Pick the matching jar from `versions/<minecraft>-<loader>/build/libs/` for the Minecraft version you play. To run a single server test, pass `-PgameTestFilter=hammer:hammer_tunnel_gaps` to the version's GameTest task.
+Use `gradlew.bat` on Windows. Each target writes `hammer-<minecraft>-<loader>-<mod-version>.jar` to `versions/<minecraft>-<loader>/build/libs/`. Set the Hammer version for all targets with `mod_version` in the root `gradle.properties`. To run a single server test, pass `-PgameTestFilter=hammer:hammer_tunnel_gaps` to the version's GameTest task.
 
 Both loaders write a GameTest XML report to `versions/<target>/run/gameTestServer/gametest.xml`. Each CI target uploads that report, its server log, any crash report, and the JUnit XML available from the run in the `hammer-tests-<target>` artifact.
 
