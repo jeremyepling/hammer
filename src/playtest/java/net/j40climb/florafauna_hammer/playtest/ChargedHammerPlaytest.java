@@ -134,7 +134,7 @@ final class ChargedHammerPlaytest {
         KeyMapping.click(ClientSetup.boundKey(mapping));
     }
 
-    private static void bindHammerUse() {
+    static void bindHammerUse() {
         HammerKey.USE_HAMMER.mapping().setKey(InputConstants.getKey("key.keyboard.v"));
         KeyMapping.resetMapping();
     }

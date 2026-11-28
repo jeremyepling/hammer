@@ -4,8 +4,6 @@ import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.SelectHammerActionPayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.SelectMiningModePayload;
-import net.j40climb.florafauna_hammer.common.item.abilities.networking.SpawnLightningPayload;
-import net.j40climb.florafauna_hammer.common.item.abilities.networking.TeleportToSurfacePayload;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.ClientSetup;
@@ -242,13 +240,16 @@ final class HammerProgressionPlaytest {
                     "Accepted locked mining mode or favorite");
             return true;
         });
-        t.client("Send the lightning and teleport packets directly", mc -> {
+        t.client("Request both locked actions directly from the server", mc -> {
             int slot = mc.player.getInventory().getSelectedSlot();
             ClientSetup.sendToServer(new SelectHammerActionPayload(slot, HammerAction.LIGHTNING));
-            ClientSetup.sendToServer(new SpawnLightningPayload(SpawnLightningPayload.targetFromView(mc.player)));
-            ClientSetup.sendToServer(TeleportToSurfacePayload.INSTANCE);
-            ClientSetup.sendToServer(new SelectMiningModePayload(slot, MiningShape.FLAT_3X3, false));
+            ClientSetup.sendToServer(new SelectHammerActionPayload(slot, HammerAction.TELEPORT));
         });
+        t.client("Use the Forged Hammer after requesting both locked actions", mc ->
+                KeyMapping.click(ClientSetup.boundKey(mc.options.keyUse)));
+        t.client("Send a valid mining shape as a server acknowledgement", mc ->
+                ClientSetup.sendToServer(new SelectMiningModePayload(
+                        mc.player.getInventory().getSelectedSlot(), MiningShape.FLAT_3X3, false)));
         t.awaitServer("Locked favorites and abilities remain rejected on the server", p -> {
             var tool = p.getMainHandItem();
             var mode = tool.get(HammerRegistry.MULTI_BLOCK_MINING.get());

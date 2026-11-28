@@ -34,6 +34,8 @@ import java.util.Set;
 final class HammerPowerPlaytest {
     private static final BlockPos CHEST = new BlockPos(0, 202, 3);
     private static final BlockPos ORE = new BlockPos(2, 203, 8);
+    private static final BlockPos LIGHTNING_TARGET = new BlockPos(8, 202, 0);
+    private static final BlockPos TELEPORT_ROOF = new BlockPos(0, 205, 0);
 
     //? if >=26.3 {
     /*private static final Block SCANNER_WALL = Blocks.CONCRETE.gray();*/
@@ -125,16 +127,40 @@ final class HammerPowerPlaytest {
                 && HammerItem.charge(p.getMainHandItem()) <= 54 && p.level().getBlockState(p.getOnPos()).is(SCANNER_WALL));
         t.screenshot("kinetic-impact");
         t.server("Build a ranged lightning target away from the player", p -> {
-            p.level().setBlockAndUpdate(new BlockPos(8, 202, 0), Blocks.OBSIDIAN.defaultBlockState());
+            p.level().setBlockAndUpdate(LIGHTNING_TARGET, Blocks.OBSIDIAN.defaultBlockState());
             p.teleportTo(p.level(), 0.5, 201, 0.5, Set.of(), -90f, 0f, true);
         });
         t.client("Restore first person for the lightning discharge", mc -> mc.options.setCameraType(CameraType.FIRST_PERSON));
         t.awaitClient("Aim down the lightning lane", mc -> mc.player.getYRot() == -90f
-                && mc.level.getBlockState(new BlockPos(8, 202, 0)).is(Blocks.OBSIDIAN));
-        t.client("Activate lightning with the mapped key", mc -> KeyMapping.click(ClientSetup.boundKey(HammerKey.SUMMON_LIGHTNING.mapping())));
-        t.awaitClient("Observe a real bolt in the target lane", mc -> !mc.level.getEntitiesOfClass(
-                LightningBolt.class, mc.player.getBoundingBox().inflate(12)).isEmpty());
+                && mc.level.getBlockState(LIGHTNING_TARGET).is(Blocks.OBSIDIAN));
+        HammerMenuPlaytest.choose(t, HammerAction.LIGHTNING);
+        t.client("Activate the selected Lightning action with vanilla Use", mc ->
+                KeyMapping.click(ClientSetup.boundKey(mc.options.keyUse)));
+        t.awaitClient("Observe a real bolt at the lightning target", mc -> !mc.level.getEntitiesOfClass(
+                LightningBolt.class, mc.player.getBoundingBox().inflate(12),
+                bolt -> bolt.blockPosition().equals(LIGHTNING_TARGET)).isEmpty());
         t.screenshot("tempest-lightning-discharge-first");
+        t.server("Build a roof with a clear landing above the player", p -> {
+            var level = p.level();
+            for (var pos : BlockPos.betweenClosed(TELEPORT_ROOF.below(3), TELEPORT_ROOF.above(2))) {
+                level.setBlockAndUpdate(pos, (pos.equals(TELEPORT_ROOF) ? Blocks.STONE : Blocks.AIR).defaultBlockState());
+            }
+        });
+        t.awaitClient("Stand under the roof with the Hammer", mc -> mc.player.onGround()
+                && mc.player.blockPosition().equals(TELEPORT_ROOF.below(4))
+                && mc.level.getBlockState(TELEPORT_ROOF).is(Blocks.STONE));
+        HammerMenuPlaytest.choose(t, HammerAction.TELEPORT);
+        t.client("Activate the selected Surface Teleport with the optional Use Hammer binding", mc -> {
+            Playtest.require(HammerKey.USE_HAMMER.mapping().isUnbound(), "Use Hammer must start unassigned");
+            ChargedHammerPlaytest.bindHammerUse();
+            KeyMapping.click(ClientSetup.boundKey(HammerKey.USE_HAMMER.mapping()));
+        });
+        t.awaitServer("Land safely on top of the roof with the same action selected", p -> p.onGround()
+                && p.blockPosition().equals(TELEPORT_ROOF.above())
+                && p.getMainHandItem().get(HammerRegistry.HAMMER_ACTION.get()) == HammerAction.TELEPORT);
+        t.awaitClient("See the Hammer and the surface landing after teleport", mc ->
+                mc.player.blockPosition().equals(TELEPORT_ROOF.above())
+                        && mc.player.getMainHandItem().is(HammerRegistry.HAMMER.get()));
         t.server("Prepare a full Tempest Hammer for a charged ore strike", p ->
                 p.getMainHandItem().set(HammerRegistry.HAMMER_CHARGE.get(), HammerStage.TEMPEST.capacity()));
         ChargedHammerPlaytest.steps(t);
