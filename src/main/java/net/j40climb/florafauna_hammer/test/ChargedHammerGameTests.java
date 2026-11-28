@@ -12,8 +12,10 @@ import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
@@ -120,15 +122,25 @@ final class ChargedHammerGameTests {
 
     private static void flight(GameTestHelper h, boolean creative) {
         var p = player(h, creative);
+        var level = h.getLevel();
         var center = h.absolutePos(new BlockPos(8, 12, 8));
         rock(p, center, Blocks.DIAMOND_ORE);
         rock(p, center.east(), Blocks.DIAMOND_ORE);
         p.setPos(Vec3.atCenterOf(center.north(4)));
+        p.setYRot(0);
+        p.setXRot(0);
+        var hammer = p.getMainHandItem();
+        hammer.set(DataComponents.CUSTOM_NAME, Component.literal("Returning Vein Hammer"));
+        UpdateToolConfigPayload.applyToHeldItem(p, new ToolConfig(false, true, MiningSpeed.STANDARD));
+        var expected = hammer.copy();
+        expected.set(HammerRegistry.HAMMER_CHARGE.get(), HammerStage.RESONANT.capacity() - 2);
+        var catchArea = p.getBoundingBox().inflate(3);
+        var flightArea = catchArea.minmax(new AABB(center).inflate(2));
         ChargedThrowPayload.key(p, ChargedThrowPayload.PRESS);
         h.runAfterDelay(ChargedThrowPayload.HOLD_TICKS + 1, () -> {
             ChargedThrowPayload.key(p, ChargedThrowPayload.RELEASE);
             ChargedThrowPayload.key(p, ChargedThrowPayload.RELEASE);
-            var entities = p.level().getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == p);
+            var entities = level.getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == p);
             h.assertTrue(entities.size() == 1 && p.getMainHandItem().isEmpty(), "The charged throw must transfer exactly one Hammer");
             var projectile = entities.getFirst();
             var save = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, p.level().registryAccess());
@@ -142,19 +154,62 @@ final class ChargedHammerGameTests {
             var held = new ItemStack(Items.STICK, 4);
             p.setItemInHand(InteractionHand.MAIN_HAND, held);
             restored.tick();
-            h.assertTrue(p.level().isEmptyBlock(center) && p.level().isEmptyBlock(center.east()), "Reloaded charged throw did not strike the vein");
-            h.assertTrue(HammerItem.charge(restored.getThrownItem()) == HammerStage.RESONANT.capacity() - 2, "Projectile did not retain the debit");
-            restored.setPos(p.getEyePosition().add(0, 0, 0.5));
-            restored.tick();
-            h.assertTrue(restored.isRemoved() && p.getMainHandItem() == held, "Return displaced the current stack");
-            int count = 0;
-            for (ItemStack stack : p.getInventory().getNonEquipmentItems()) {
-                if (stack.is(HammerRegistry.HAMMER.get())) {
-                    h.assertTrue(HammerItem.charge(stack) == HammerStage.RESONANT.capacity() - 2, "Charge changed on return");
-                    count += stack.getCount();
+            h.assertTrue(level.isEmptyBlock(center) && level.isEmptyBlock(center.east()), "Reloaded charged throw did not strike the vein");
+            h.assertTrue(restored.isReturning() && ItemStack.matches(expected, restored.getThrownItem()),
+                    "Mined projectile lost its Hammer components or the two-block debit");
+            h.assertTrue(level.getEntitiesOfClass(ItemEntity.class, flightArea).isEmpty(),
+                    "Charged impact spawned ground items before the catch");
+            h.assertTrue(p.getInventory().countItem(Items.DIAMOND_ORE) == 0, "Charged impact delivered ore before the catch");
+
+            var minedSave = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, level.registryAccess());
+            restored.saveWithoutId(minedSave);
+            restored.discard();
+            var returning = HammerRegistry.THROWN_ITEM.get().create(level, EntitySpawnReason.LOAD);
+            returning.load(TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), minedSave.buildResult()));
+            returning.setOwner(p);
+            h.assertTrue(returning.isReturning() && ItemStack.matches(expected, returning.getThrownItem()),
+                    "Reload after mining lost the return state or the debited Hammer");
+
+            var inventory = p.getInventory();
+            if (!creative) {
+                // Leave space for one Hammer and one more ore in the existing stack.
+                int hammerSlot = 5;
+                int oreSlot = 6;
+                for (int slot = 0; slot < inventory.getNonEquipmentItems().size(); slot++) {
+                    if (slot != inventory.getSelectedSlot() && slot != hammerSlot && slot != oreSlot) {
+                        inventory.setItem(slot, new ItemStack(Items.STONE, 64));
+                    }
                 }
+                inventory.setItem(oreSlot, new ItemStack(Items.DIAMOND_ORE, 63));
+                //? if neoforge {
+                int vetoes = TestPlatform.withRejectedRecoveryDrop(level, drop -> drop.getItem().is(Items.DIAMOND_ORE), () -> {
+                    for (int tick = 0; tick < 5 && inventory.countItem(Items.DIAMOND_ORE) == 63 && !returning.isRemoved(); tick++) {
+                        returning.tick();
+                    }
+                });
+                h.assertTrue(vetoes == 1 && !returning.isRemoved()
+                                && ItemStack.matches(expected, inventory.getItem(hammerSlot))
+                                && inventory.countItem(Items.DIAMOND_ORE) == 64
+                                && level.getEntitiesOfClass(ItemEntity.class, flightArea).isEmpty(),
+                        "A vetoed overflow drop must leave only the rejected remainder in flight");
+                //?}
             }
-            h.assertTrue(count == 1, "Expected exactly one returned Hammer, got " + count);
+            for (int tick = 0; tick < 40 && !returning.isRemoved(); tick++) returning.tick();
+            h.assertTrue(returning.isRemoved() && p.getMainHandItem() == held && held.getCount() == 4,
+                    "The catch or overflow retry failed or displaced the selected stack");
+            h.assertTrue(inventory.countItem(expected.getItem()) == 1
+                            && inventory.getNonEquipmentItems().stream().anyMatch(stack -> ItemStack.matches(expected, stack)),
+                    "Expected exactly one returned Hammer with the same name, charge and components");
+            var drops = level.getEntitiesOfClass(ItemEntity.class, flightArea);
+            if (creative) {
+                h.assertTrue(inventory.countItem(Items.DIAMOND_ORE) == 0 && drops.isEmpty(),
+                        "Creative mining should return the Hammer without creating ore");
+            } else {
+                h.assertTrue(inventory.countItem(Items.DIAMOND_ORE) == 64 && drops.size() == 1
+                                && ItemStack.matches(new ItemStack(Items.DIAMOND_ORE), drops.getFirst().getItem())
+                                && catchArea.intersects(drops.getFirst().getBoundingBox()),
+                        "Catch must insert one ore and leave exactly one overflow ore at the owner");
+            }
             h.succeed();
         });
     }
