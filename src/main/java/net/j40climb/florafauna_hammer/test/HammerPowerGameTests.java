@@ -153,8 +153,12 @@ final class HammerPowerGameTests {
         }
 
         private void assertAt(GameTestHelper h, Object effect, Vec3 feet) {
+            // Sound packets round to eighths and decode through floats, even far from world origin.
+            double xTolerance = 0.125 + Math.ulp((float) feet.x) / 2.0;
+            double zTolerance = 0.125 + Math.ulp((float) feet.z) / 2.0;
             h.assertTrue(received.stream().anyMatch(cue -> cue.effect().equals(effect)
-                            && Math.abs(cue.position().x - feet.x) <= 0.125 && Math.abs(cue.position().z - feet.z) <= 0.125
+                            && Math.abs(cue.position().x - feet.x) <= xTolerance
+                            && Math.abs(cue.position().z - feet.z) <= zTolerance
                             && cue.position().y >= feet.y - 0.125 && cue.position().y <= feet.y + 1.5),
                     "Missing " + effect + " near " + feet + " in " + received);
         }
