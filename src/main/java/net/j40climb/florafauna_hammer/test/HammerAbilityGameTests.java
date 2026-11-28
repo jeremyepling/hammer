@@ -53,6 +53,7 @@ final class HammerAbilityGameTests {
         var mine = Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "test_hammer_mine");
         HammerGameTests.registerStructureTest(tests, "hammer_throw_impact_protected", mine, 100, h -> checkThrowImpact(h, true));
         HammerGameTests.registerStructureTest(tests, "hammer_throw_impact_silk_touch", mine, 100, h -> checkThrowImpact(h, false));
+        HammerGameTests.registerStructureTest(tests, "hammer_throw_impact_breaks_tool", mine, 100, HammerAbilityGameTests::checkThrownToolBreaks);
         HammerGameTests.registerTest(tests, "hammer_throw_rejected_or_inventory_full", HammerAbilityGameTests::checkThrowFailure);
         //? if neoforge {
         HammerGameTests.registerTest(tests, "hammer_throw_recovery_toss_veto", HammerAbilityGameTests::checkRecoveryTossVeto);
@@ -346,14 +347,18 @@ final class HammerAbilityGameTests {
         helper.succeed();
     }
 
-    private static void checkThrowImpact(GameTestHelper helper, boolean protectedImpact) {
-        var player = player(helper);
-        var level = helper.getLevel();
+    private static BlockPos aimAtThrowImpact(GameTestHelper helper, ServerPlayer player) {
         var launch = helper.absolutePos(new BlockPos(8, 10, 4));
         player.setPos(Vec3.atCenterOf(launch));
         player.setYRot(0);
         player.setXRot(0);
-        var target = BlockPos.containing(player.getEyePosition()).south(4);
+        return BlockPos.containing(player.getEyePosition()).south(4);
+    }
+
+    private static void checkThrowImpact(GameTestHelper helper, boolean protectedImpact) {
+        var player = player(helper);
+        var level = helper.getLevel();
+        var target = aimAtThrowImpact(helper, player);
         var neighbor = target.east();
         level.setBlockAndUpdate(target, Blocks.DIAMOND_ORE.defaultBlockState());
         level.setBlockAndUpdate(neighbor, Blocks.DIAMOND_ORE.defaultBlockState());
@@ -408,6 +413,44 @@ final class HammerAbilityGameTests {
                     "Impact changed the selected hotbar stack");
         } finally {
             release.run();
+            projectile.discard();
+        }
+        helper.succeed();
+    }
+
+    private static void checkThrownToolBreaks(GameTestHelper helper) {
+        var player = player(helper);
+        var level = helper.getLevel();
+        var target = aimAtThrowImpact(helper, player);
+        level.setBlockAndUpdate(target, Blocks.DIAMOND_ORE.defaultBlockState());
+
+        var pickaxe = new ItemStack(Items.DIAMOND_PICKAXE);
+        pickaxe.set(DataComponents.CUSTOM_NAME, Component.literal("Last Swing Pickaxe"));
+        pickaxe.set(HammerRegistry.THROWABLE_ABILITY.get(), ThrowableAbilityData.DEFAULT.withBreakBlocks(true));
+        pickaxe.setDamageValue(pickaxe.getMaxDamage() - 1);
+        var expected = pickaxe.copy();
+        player.setItemInHand(InteractionHand.MAIN_HAND, pickaxe);
+        ThrowItemPayload.onServerReceived(new ThrowItemPayload(true), player);
+        var projectiles = level.getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == player);
+        helper.assertTrue(projectiles.size() == 1 && player.getMainHandItem().isEmpty()
+                        && ItemStack.matches(expected, projectiles.getFirst().getThrownItem()),
+                "Expected one unchanged pickaxe to transfer to the projectile");
+        var projectile = projectiles.getFirst();
+        var selected = new ItemStack(Items.STICK);
+        player.setItemInHand(InteractionHand.MAIN_HAND, selected);
+        try {
+            for (int tick = 0; tick < 4 && !projectile.isRemoved() && !level.isEmptyBlock(target); tick++) projectile.tick();
+            helper.assertTrue(level.isEmptyBlock(target), "Thrown pickaxe did not break the diamond ore");
+            helper.assertTrue(projectile.isRemoved()
+                            && level.getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == player).isEmpty(),
+                    "The broken pickaxe left a projectile in flight");
+            helper.assertTrue(player.getMainHandItem() == selected && selected.getCount() == 1
+                            && player.getInventory().countItem(Items.DIAMOND_PICKAXE) == 0,
+                    "The impact returned the broken pickaxe or changed the held stack");
+            var drops = level.getEntitiesOfClass(ItemEntity.class, new AABB(target).inflate(5));
+            helper.assertTrue(drops.size() == 1 && ItemStack.matches(drops.getFirst().getItem(), new ItemStack(Items.DIAMOND)),
+                    "The last use must drop a single diamond and no pickaxe");
+        } finally {
             projectile.discard();
         }
         helper.succeed();
