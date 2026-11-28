@@ -23,6 +23,7 @@ import net.minecraft.world.entity.EntityType;
 //?}
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CampfireBlock;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -36,6 +37,7 @@ final class HammerPowerGameTests {
     static void register(HammerGameTests.Registrar tests) {
         var mine = Identifier.fromNamespaceAndPath("hammer", "test_hammer_mine");
         HammerGameTests.registerStructureTest(tests, "hammer_grounded_lightning_and_teleport", mine, 100, HammerPowerGameTests::groundedAbilities);
+        HammerGameTests.registerStructureTest(tests, "hammer_surface_teleport_avoids_hazards", mine, 100, HammerPowerGameTests::surfaceTeleportAvoidsHazards);
         HammerGameTests.registerStructureTest(tests, "hammer_slam_impact", mine, 100, HammerPowerGameTests::slamImpact);
         HammerGameTests.registerStructureTest(tests, "hammer_slam_rejections", mine, 100, HammerPowerGameTests::slamRejections);
         HammerGameTests.registerStructureTest(tests, "hammer_scan_private_results", mine, 200, HammerPowerGameTests::scan);
@@ -83,6 +85,36 @@ final class HammerPowerGameTests {
                     "Surface Teleport failed to reach the cleared surface");
         } finally {
             h.getLevel().getServer().getPlayerList().remove(player);
+        }
+        h.succeed();
+    }
+
+    private static void surfaceTeleportAvoidsHazards(GameTestHelper h) {
+        var level = h.getLevel();
+        var origin = h.absolutePos(FLOOR.above());
+        var player = scanner(h, origin).player;
+        try {
+            player.setItemInHand(HAND, HammerStage.TEMPEST.createStack());
+            player.getMainHandItem().set(HammerRegistry.HAMMER_ACTION.get(), HammerAction.TELEPORT);
+            var hazards = List.of(Blocks.LAVA.defaultBlockState(),
+                    Blocks.CAMPFIRE.defaultBlockState().setValue(CampfireBlock.LIT, true));
+            for (var hazard : hazards) {
+                var start = Vec3.atBottomCenterOf(origin);
+                player.setPos(start);
+                var hazardPos = origin.above(3);
+                var safeSupport = origin.above(6);
+                HammerMiningGameTests.fill(player, origin.above(2),
+                        new BlockPos(origin.getX(), level.getMaxY(), origin.getZ()), Blocks.AIR);
+                level.setBlockAndUpdate(hazardPos, hazard);
+                h.assertTrue(clickAir(player) && player.position().equals(start),
+                        "Surface Teleport moved the player when the only candidate was " + hazard);
+
+                level.setBlockAndUpdate(safeSupport, Blocks.STONE.defaultBlockState());
+                h.assertTrue(clickAir(player) && player.blockPosition().equals(safeSupport.above()),
+                        "Surface Teleport did not skip " + hazard + " and reach the stone above it");
+            }
+        } finally {
+            level.getServer().getPlayerList().remove(player);
         }
         h.succeed();
     }
