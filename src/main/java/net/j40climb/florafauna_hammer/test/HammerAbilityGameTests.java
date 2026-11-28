@@ -30,10 +30,14 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
+
+import java.util.List;
 
 
 final class HammerAbilityGameTests {
@@ -44,6 +48,10 @@ final class HammerAbilityGameTests {
         HammerGameTests.registerTest(tests, "hammer_throw_single_item_and_reload", HammerAbilityGameTests::checkThrow);
         HammerGameTests.registerTest(tests, "hammer_throw_straight_flight", HammerAbilityGameTests::straightFlight);
         HammerGameTests.registerTest(tests, "hammer_throw_rejected_or_inventory_full", HammerAbilityGameTests::checkThrowFailure);
+        //? if neoforge {
+        HammerGameTests.registerTest(tests, "hammer_throw_recovery_toss_veto", HammerAbilityGameTests::checkRecoveryTossVeto);
+        //?}
+        HammerGameTests.registerTest(tests, "hammer_throw_recovery_cross_dimension", HammerAbilityGameTests::checkRecoveryCrossDimension);
     }
 
     private static ServerPlayer player(GameTestHelper helper) {
@@ -197,6 +205,87 @@ final class HammerAbilityGameTests {
                 e -> ItemStack.matches(expected, e.getItem()));
         helper.assertTrue(entity.isRemoved() && drops.size() == 1, "A full inventory should leave one recoverable Hammer");
         helper.succeed();
+    }
+
+    //? if neoforge {
+    private static void checkRecoveryTossVeto(GameTestHelper helper) {
+        var player = player(helper);
+        var expected = namedRecoveryHammer("Toss recovery Hammer");
+        var entity = beginRecoveryThrow(helper, player, expected);
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.getNonEquipmentItems().size(); slot++) {
+            inventory.setItem(slot, new ItemStack(Items.STONE, 64));
+        }
+        var catchArea = player.getBoundingBox().inflate(3);
+
+        int vetoes = TestPlatform.withRejectedRecoveryToss(player, entity::tick);
+        helper.assertTrue(vetoes == 1, "Expected the full inventory to attempt one item toss");
+        helper.assertTrue(!entity.isRemoved() && ItemStack.matches(expected, entity.getThrownItem())
+                        && inventory.countItem(expected.getItem()) == 0 && recoveryDrops(helper, catchArea, expected).isEmpty(),
+                "Toss veto should leave one unchanged Hammer in the returning projectile");
+
+        int freeSlot = 5;
+        inventory.setItem(freeSlot, ItemStack.EMPTY);
+        for (int tick = 0; tick < 40 && !entity.isRemoved(); tick++) entity.tick();
+        helper.assertTrue(entity.isRemoved() && ItemStack.matches(expected, inventory.getItem(freeSlot))
+                        && inventory.countItem(expected.getItem()) == 1 && recoveryDrops(helper, catchArea, expected).isEmpty(),
+                "The recovery retry should return one unchanged Hammer to the newly freed slot");
+        helper.succeed();
+    }
+    //?}
+
+    private static void checkRecoveryCrossDimension(GameTestHelper helper) {
+        var player = player(helper);
+        var expected = namedRecoveryHammer("Dimension recovery Hammer");
+        var entity = beginRecoveryThrow(helper, player, expected);
+        var originLevel = helper.getLevel();
+        var destination = originLevel.getServer().getLevel(Level.NETHER);
+        helper.assertTrue(destination != null && destination != originLevel, "Missing destination dimension");
+        var recoveryArea = entity.getBoundingBox().inflate(3);
+        player.setServerLevel(destination);
+        try {
+            //? if neoforge {
+            int vetoes = TestPlatform.withRejectedRecoveryDrop(originLevel,
+                    drop -> ItemStack.matches(expected, drop.getItem()), entity::tick);
+            helper.assertTrue(vetoes == 1, "Expected one fallback spawn in the Hammer's dimension");
+            helper.assertTrue(!entity.isRemoved() && ItemStack.matches(expected, entity.getThrownItem())
+                            && player.getInventory().countItem(expected.getItem()) == 0
+                            && recoveryDrops(helper, recoveryArea, expected).isEmpty(),
+                    "Spawn veto should leave the unchanged Hammer in the projectile");
+            //?}
+            for (int tick = 0; tick < 40 && !entity.isRemoved(); tick++) entity.tick();
+            var drops = recoveryDrops(helper, recoveryArea, expected);
+            helper.assertTrue(entity.isRemoved() && drops.size() == 1 && ItemStack.matches(expected, drops.getFirst().getItem())
+                            && player.getInventory().countItem(expected.getItem()) == 0,
+                    "Recovery should leave one unchanged Hammer in the original dimension");
+        } finally {
+            player.setServerLevel(originLevel);
+        }
+        helper.succeed();
+    }
+
+    private static ItemStack namedRecoveryHammer(String name) {
+        var stack = HammerStage.FORGED.createStack();
+        stack.set(HammerRegistry.HAMMER_ACTION.get(), HammerAction.THROW);
+        stack.set(DataComponents.CUSTOM_NAME, Component.literal(name));
+        return stack;
+    }
+
+    private static ThrownItemEntity beginRecoveryThrow(GameTestHelper helper, ServerPlayer player, ItemStack expected) {
+        player.setItemInHand(InteractionHand.MAIN_HAND, expected.copy());
+        helper.assertTrue(TestPlatform.clickAir(player, InteractionHand.MAIN_HAND), "Throw was not accepted");
+        var entities = helper.getLevel().getEntities(HammerRegistry.THROWN_ITEM.get(), projectile -> projectile.getOwner() == player);
+        helper.assertTrue(entities.size() == 1 && player.getMainHandItem().isEmpty(), "Expected one Hammer in flight");
+        var entity = entities.getFirst();
+        entity.setPos(player.position().add(40, 0, 0));
+        entity.tick();
+        helper.assertTrue(entity.isReturning(), "Hammer did not start returning");
+        entity.setPos(player.position());
+        return entity;
+    }
+
+    private static List<ItemEntity> recoveryDrops(GameTestHelper helper, AABB area, ItemStack expected) {
+        return helper.getLevel().getEntitiesOfClass(ItemEntity.class, area, drop -> drop.getItem().is(expected.getItem()));
     }
 
     private static void straightFlight(GameTestHelper helper) {

@@ -7,11 +7,13 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
@@ -21,6 +23,7 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
@@ -66,6 +69,40 @@ final class TestPlatform {
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, EntityJoinLevelEvent.class, veto);
         try {
             attempt.run();
+        } finally {
+            NeoForge.EVENT_BUS.unregister(veto);
+        }
+    }
+
+    static int withRejectedRecoveryToss(ServerPlayer player, Runnable attempt) {
+        var vetoes = new AtomicInteger();
+        Consumer<ItemTossEvent> veto = event -> {
+            if (event.getPlayer() == player) {
+                vetoes.incrementAndGet();
+                event.setCanceled(true);
+            }
+        };
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, ItemTossEvent.class, veto);
+        try {
+            attempt.run();
+            return vetoes.get();
+        } finally {
+            NeoForge.EVENT_BUS.unregister(veto);
+        }
+    }
+
+    static int withRejectedRecoveryDrop(ServerLevel level, Predicate<ItemEntity> denied, Runnable attempt) {
+        var vetoes = new AtomicInteger();
+        Consumer<EntityJoinLevelEvent> veto = event -> {
+            if (event.getLevel() == level && event.getEntity() instanceof ItemEntity drop && denied.test(drop)) {
+                vetoes.incrementAndGet();
+                event.setCanceled(true);
+            }
+        };
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, EntityJoinLevelEvent.class, veto);
+        try {
+            attempt.run();
+            return vetoes.get();
         } finally {
             NeoForge.EVENT_BUS.unregister(veto);
         }
