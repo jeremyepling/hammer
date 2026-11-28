@@ -18,6 +18,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.item.ItemStack;
@@ -53,6 +54,9 @@ public class ThrownItemEntity extends AbstractArrow {
             SynchedEntityData.defineId(ThrownItemEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Float> DATA_RETURN_SPEED =
             SynchedEntityData.defineId(ThrownItemEntity.class, EntityDataSerializers.FLOAT);
+
+    private static final int RECOVERY_RETRY_TICKS = 20;
+    private int recoveryRetryTicks;
 
     // State tracking
     private boolean oreStrike;
@@ -109,6 +113,7 @@ public class ThrownItemEntity extends AbstractArrow {
             this.dealtDamage = true;
         }
 
+        if (recoveryRetryTicks > 0) recoveryRetryTicks--;
         Entity owner = this.getOwner();
         boolean autoReturn = getAutoReturn();
         float maxRange = getMaxRange();
@@ -122,8 +127,7 @@ public class ThrownItemEntity extends AbstractArrow {
         if (autoReturn && (returning || dealtDamage || isNoPhysics())) {
             if (!isAcceptableReturnOwner(owner)) {
                 if (level() instanceof ServerLevel serverLevel) {
-                    if (pickup != Pickup.CREATIVE_ONLY) spawnAtLocation(serverLevel, getThrownItem());
-                    discard();
+                    recoverItem(serverLevel, null);
                 }
                 return;
             }
@@ -136,23 +140,59 @@ public class ThrownItemEntity extends AbstractArrow {
             }
             // A standing player catches at eye height as well as near their feet.
             if (owner.getBoundingBox().distanceToSqr(position()) < 1.5 * 1.5 && level() instanceof ServerLevel serverLevel) {
-                if (pickup != Pickup.CREATIVE_ONLY) {
-                    if (owner instanceof Player player) {
-                        //? if <26.3 {
-                        player.getInventory().placeItemBackInInventory(getThrownItem().copy());
-                        //?} else {
-                        /*player.getInventory().placeItemBackInInventory(getThrownItem().copy(), Prediction.SERVER_ONLY);
-                        *///?}
-                    } else {
-                        spawnAtLocation(serverLevel, getThrownItem());
-                    }
-                }
-                discard();
+                recoverItem(serverLevel, owner instanceof Player player ? player : null);
                 return;
             }
         }
 
         super.tick();
+    }
+
+    private void recoverItem(ServerLevel level, @Nullable Player player) {
+        if (pickup == Pickup.CREATIVE_ONLY) {
+            discard();
+            return;
+        }
+
+        setDeltaMovement(Vec3.ZERO);
+        if (recoveryRetryTicks > 0) return;
+
+        // The projectile owns one item until either its slot or its drop accepts it.
+        ItemStack stack = getThrownItem().copy();
+        boolean accepted;
+        if (player != null) {
+            accepted = returnToPlayer(level, player, stack);
+        } else {
+            ItemEntity drop = new ItemEntity(level, getX(), getY(), getZ(), stack);
+            drop.setDefaultPickUpDelay();
+            accepted = level.addFreshEntity(drop);
+        }
+        if (accepted) {
+            discard();
+        } else {
+            recoveryRetryTicks = RECOVERY_RETRY_TICKS;
+        }
+    }
+
+    private static boolean returnToPlayer(ServerLevel level, Player player, ItemStack stack) {
+        var inventory = player.getInventory();
+        int slot = inventory.getSlotWithRemainingSpace(stack);
+        if (slot < 0) slot = inventory.getFreeSlot();
+        if (slot >= 0) {
+            if (!inventory.add(slot, stack)) return false;
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.connection.send(inventory.createInventoryUpdatePacket(slot));
+            }
+            return true;
+        }
+
+        // The toss hook may cancel, or entity admission may reject the returned entity.
+        //? if <26.3 {
+        ItemEntity drop = player.drop(stack, false);
+        //?} else {
+        /*ItemEntity drop = player.drop(stack, false, Prediction.SERVER_ONLY);
+        *///?}
+        return drop != null && level.getEntity(drop.getId()) == drop;
     }
 
     @Override
@@ -166,7 +206,7 @@ public class ThrownItemEntity extends AbstractArrow {
     }
 
     private boolean isAcceptableReturnOwner(@Nullable Entity owner) {
-        if (owner == null || !owner.isAlive()) return false;
+        if (owner == null || owner.level() != level() || !owner.isAlive()) return false;
         if (owner instanceof ServerPlayer serverPlayer) {
             return !serverPlayer.isSpectator();
         }
