@@ -1,10 +1,8 @@
 package net.j40climb.florafauna_hammer.client;
 
-import net.j40climb.florafauna_hammer.HammerMod;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.CycleMiningModePayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.SpawnLightningPayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.TeleportToSurfacePayload;
-import net.j40climb.florafauna_hammer.common.item.abilities.networking.ThrowItemPayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.ChargedThrowPayload;
 import net.j40climb.florafauna_hammer.setup.ClientSetup;
 import net.j40climb.florafauna_hammer.setup.HammerKey;
@@ -26,23 +24,12 @@ public class KeyInputEvents {
     private static net.minecraft.world.level.Level throwLevel;
     private static InteractionHand throwHand;
     private static int throwSlot;
-    private static boolean dedicatedThrow;
-    private static boolean useThrow;
     private static boolean waitForUseUp;
     private static boolean waitForThrowUp;
 
     /** The interaction callback has selected Throw after vanilla and tool interactions. */
     public static void onUseThrow(Player player, InteractionHand hand) {
         if (player != Minecraft.getInstance().player || waitForUseUp) return;
-        rememberThrow(player, hand);
-        useThrow = true;
-    }
-
-    public static boolean suppressRepeatedUse() {
-        return useThrow || waitForUseUp;
-    }
-
-    private static void rememberThrow(Player player, InteractionHand hand) {
         if (throwHand == null) {
             throwPlayer = player;
             throwLevel = player.level();
@@ -51,21 +38,34 @@ public class KeyInputEvents {
         }
     }
 
+    public static boolean suppressRepeatedUse() {
+        return throwHand != null || waitForUseUp;
+    }
+
+    public static boolean canUseHammerBinding(Player player) {
+        return player != null && (player.getMainHandItem().is(HammerRegistry.HAMMER.get())
+                || player.getOffhandItem().is(HammerRegistry.HAMMER.get()));
+    }
+
+    private static boolean hammerBindingDown() {
+        var key = HammerKey.USE_HAMMER.mapping();
+        return !key.isUnbound() && key.isDown();
+    }
+
+    public static boolean hammerBindingDown(Player player) {
+        return canUseHammerBinding(player) && hammerBindingDown();
+    }
+
     private static void clearThrow() {
         throwPlayer = null;
         throwLevel = null;
         throwHand = null;
-        dedicatedThrow = false;
-        useThrow = false;
     }
 
-    private static void updateThrowKey(Minecraft mc) {
+    private static void updateThrow(Minecraft mc) {
         var player = mc.player;
-        var key = HammerKey.THROW_ITEM.mapping();
-        boolean useDown = mc.options.keyUse.isDown();
-        boolean keyDown = key.isDown();
+        boolean useDown = mc.options.keyUse.isDown() || hammerBindingDown();
         if (!useDown) waitForUseUp = false;
-        if (!keyDown) waitForThrowUp = false;
         //? if <26.3 {
         boolean screenOpen = mc.screen != null;
         //?} else {
@@ -75,25 +75,10 @@ public class KeyInputEvents {
                 || player.getInventory().getSelectedSlot() != throwSlot
                 || !player.getItemInHand(throwHand).is(HammerRegistry.HAMMER.get()))) {
             if (player != null && mc.getConnection() != null) sendThrowAction(ChargedThrowPayload.CANCEL);
-            waitForUseUp = useThrow && useDown;
-            waitForThrowUp = dedicatedThrow && keyDown;
+            waitForUseUp = useDown;
             clearThrow();
         }
-        while (key.consumeClick()) {
-            if (player == null || screenOpen || waitForThrowUp || !player.isAlive() || player.isSpectator()) continue;
-            var held = player.getMainHandItem();
-            if (!held.has(HammerRegistry.THROWABLE_ABILITY.get())) continue;
-            if (held.is(HammerRegistry.HAMMER.get())) {
-                rememberThrow(player, InteractionHand.MAIN_HAND);
-                if (!dedicatedThrow) sendThrowAction(ChargedThrowPayload.PRESS);
-                dedicatedThrow = true;
-            } else if (throwHand == null) {
-                swingThrow(player, InteractionHand.MAIN_HAND);
-                ClientSetup.sendToServer(new ThrowItemPayload(true));
-            }
-        }
-        if (throwHand != null && !(useThrow && useDown) && !(dedicatedThrow && keyDown)) {
-            if (!useThrow) swingThrow(player, throwHand);
+        if (throwHand != null && !useDown) {
             sendThrowAction(ChargedThrowPayload.RELEASE);
             clearThrow();
         }
@@ -101,14 +86,6 @@ public class KeyInputEvents {
 
     private static void sendThrowAction(int action) {
         ClientSetup.sendToServer(new ChargedThrowPayload(action));
-    }
-
-    private static void swingThrow(Player player, InteractionHand hand) {
-        //? if <26.3 {
-        player.swing(hand);
-        //?} else {
-        /*player.swing(hand, player.getItemInHand(hand).getAttackAnimation(), false);
-        *///?}
     }
 
     private static final HammerControlGesture gesture = new HammerControlGesture();
@@ -237,7 +214,9 @@ public class KeyInputEvents {
     public static void onClientTick() {
         Minecraft mc = Minecraft.getInstance();
         updateControl(mc);
-        updateThrowKey(mc);
+        updateThrow(mc);
+        var hammerUse = HammerKey.USE_HAMMER.mapping();
+        while (hammerUse.consumeClick()) { } // Discard clicks when Minecraft is not handling gameplay input.
         Player player = mc.player;
         if (player == null)
             return;

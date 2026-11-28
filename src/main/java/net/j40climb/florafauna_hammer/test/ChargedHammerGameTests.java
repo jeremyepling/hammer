@@ -140,7 +140,7 @@ final class ChargedHammerGameTests {
         expected.set(HammerRegistry.HAMMER_CHARGE.get(), HammerStage.RESONANT.capacity() - 2);
         var catchArea = p.getBoundingBox().inflate(3);
         var flightArea = catchArea.minmax(new AABB(center).inflate(2));
-        ChargedThrowPayload.key(p, ChargedThrowPayload.PRESS);
+        ChargedThrowPayload.begin(p, InteractionHand.MAIN_HAND);
         h.runAfterDelay(ChargedThrowPayload.HOLD_TICKS + 1, () -> {
             ChargedThrowPayload.key(p, ChargedThrowPayload.RELEASE);
             ChargedThrowPayload.key(p, ChargedThrowPayload.RELEASE);
@@ -225,7 +225,7 @@ final class ChargedHammerGameTests {
         rock(p, center.south(), Blocks.DIAMOND_ORE);
         p.setPos(Vec3.atCenterOf(center.north(4)));
         var original = p.getMainHandItem();
-        ChargedThrowPayload.key(p, ChargedThrowPayload.PRESS);
+        ChargedThrowPayload.begin(p, InteractionHand.MAIN_HAND);
         h.runAfterDelay(ChargedThrowPayload.HOLD_TICKS + 1, () -> {
             // NeoForge's spawn veto is a separate loader-specific regression.
             //? if neoforge {
@@ -233,7 +233,7 @@ final class ChargedHammerGameTests {
             h.assertTrue(p.getMainHandItem() == original && original.getCount() == 1 && HammerItem.charge(original) == 64,
                     "Rejected charged projectile consumed the Hammer or its charge");
             //?}
-            ChargedThrowPayload.key(p, ChargedThrowPayload.PRESS);
+            ChargedThrowPayload.begin(p, InteractionHand.MAIN_HAND);
             h.runAfterDelay(ChargedThrowPayload.HOLD_TICKS + 1, () -> {
                 ChargedThrowPayload.key(p, ChargedThrowPayload.RELEASE);
                 var thrown = p.level().getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == p).getFirst();

@@ -1,5 +1,6 @@
 package net.j40climb.florafauna_hammer.playtest;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.ChargedThrowPayload;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
@@ -9,6 +10,7 @@ import net.j40climb.florafauna_hammer.setup.HammerKey;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.gui.screens.inventory.ContainerScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -33,14 +35,14 @@ final class ChargedHammerPlaytest {
                         ? Blocks.SMOOTH_STONE : Blocks.AIR;
                 level.setBlockAndUpdate(pos, block.defaultBlockState());
             }
-            level.setBlockAndUpdate(ore, Blocks.DIAMOND_ORE.defaultBlockState());
+            level.setBlockAndUpdate(ore, Blocks.CHEST.defaultBlockState());
             level.setBlockAndUpdate(ore.east(), Blocks.DIAMOND_ORE.defaultBlockState());
             level.setBlockAndUpdate(ore.south(), Blocks.IRON_ORE.defaultBlockState());
             p.setGameMode(GameType.SURVIVAL);
             p.getInventory().clearContent();
             p.getInventory().setSelectedSlot(0);
             var hammer = HammerStage.TEMPEST.createStack();
-            hammer.set(HammerRegistry.HAMMER_ACTION.get(), HammerAction.THROW);
+            hammer.set(HammerRegistry.HAMMER_ACTION.get(), HammerAction.AUTO);
             p.setItemInHand(InteractionHand.MAIN_HAND, hammer);
             p.getInventory().setItem(1, new ItemStack(Items.STICK));
             p.teleportTo(level, ore.getX() + 0.5, ore.getY() - 1, ore.getZ() - 3.5, Set.of(), 0f, 0f, true);
@@ -48,10 +50,25 @@ final class ChargedHammerPlaytest {
         t.client("Frame the Hammer in first person", mc -> {
             mc.options.setCameraType(CameraType.FIRST_PERSON);
             Playtest.showHud(mc);
+            Playtest.require(HammerKey.USE_HAMMER.mapping().isUnbound(), "Use Hammer must start unbound");
+            bindHammerUse();
         });
-        t.awaitClient("Face exposed ore while grounded with the Hammer selected", mc -> mc.player.onGround()
+        t.awaitClient("Face the chest while grounded with the Hammer selected", mc -> mc.player.onGround()
                 && mc.player.getMainHandItem().is(HammerRegistry.HAMMER.get())
                 && mc.hitResult instanceof BlockHitResult hit && hit.getBlockPos().equals(ore));
+        t.client("Use the optional Hammer binding with Auto selected", mc -> press(HammerKey.USE_HAMMER.mapping()));
+        t.awaitClient("Open the chest while keeping the Hammer", mc -> Playtest.screen(mc) instanceof ContainerScreen
+                && mc.player.getMainHandItem().is(HammerRegistry.HAMMER.get()));
+        t.client("Release the optional binding and close the chest", mc -> {
+            HammerKey.USE_HAMMER.mapping().setDown(false);
+            mc.player.closeContainer();
+        });
+        t.server("Expose the ore and select Throw", p -> {
+            p.level().setBlockAndUpdate(ore, Blocks.DIAMOND_ORE.defaultBlockState());
+            p.getMainHandItem().set(HammerRegistry.HAMMER_ACTION.get(), HammerAction.THROW);
+        });
+        t.awaitClient("See the exposed ore with Throw selected", mc -> mc.level.getBlockState(ore).is(Blocks.DIAMOND_ORE)
+                && mc.player.getMainHandItem().get(HammerRegistry.HAMMER_ACTION.get()) == HammerAction.THROW);
         t.screenshot("throw-input-idle");
 
         t.client("Press the mapped Use button", mc -> press(mc.options.keyUse));
@@ -82,14 +99,14 @@ final class ChargedHammerPlaytest {
                 p.getMainHandItem().is(HammerRegistry.HAMMER.get()) && p.getInventory().countItem(HammerRegistry.HAMMER.get()) == 1
                         && p.level().getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == p).isEmpty());
 
-        t.client("Hold the mapped Use button for an ore strike", mc -> press(mc.options.keyUse));
+        t.client("Hold the optional Hammer Use key for an ore strike", mc -> press(HammerKey.USE_HAMMER.mapping()));
         t.awaitServer("Hold the same Hammer for five server ticks", p -> stillHolding(p, 5));
         t.screenshot("throw-input-charging-early");
         t.awaitServer("Keep the Hammer in hand for twelve server ticks", p -> stillHolding(p, 12));
         t.screenshot("throw-input-charging-late");
         t.awaitServer("Reach the server's ore-strike threshold", p -> stillHolding(p, ChargedThrowPayload.HOLD_TICKS));
         t.screenshot("throw-input-ready");
-        t.client("Release Use to launch the powered Hammer", mc -> mc.options.keyUse.setDown(false));
+        t.client("Release the optional key to launch the powered Hammer", mc -> HammerKey.USE_HAMMER.mapping().setDown(false));
         t.awaitServer("Mine only the two diamond ores and debit the projectile", p -> {
             if (!p.level().isEmptyBlock(ore) || !p.level().isEmptyBlock(ore.east())) return false;
             Playtest.require(p.level().getBlockState(ore.south()).is(Blocks.IRON_ORE), "Powered throw mined a different ore");
@@ -117,6 +134,11 @@ final class ChargedHammerPlaytest {
         KeyMapping.click(ClientSetup.boundKey(mapping));
     }
 
+    private static void bindHammerUse() {
+        HammerKey.USE_HAMMER.mapping().setKey(InputConstants.getKey("key.keyboard.v"));
+        KeyMapping.resetMapping();
+    }
+
     static void steps(Playtest t) {
         BlockPos ore = new BlockPos(24, 161, 24);
         t.server("Expose a diamond vein at the end of the throw lane", p -> {
@@ -129,18 +151,22 @@ final class ChargedHammerPlaytest {
             p.level().setBlockAndUpdate(ore, Blocks.DIAMOND_ORE.defaultBlockState());
             p.level().setBlockAndUpdate(ore.east(), Blocks.DIAMOND_ORE.defaultBlockState());
             p.level().setBlockAndUpdate(ore.south(), Blocks.IRON_ORE.defaultBlockState());
+            p.getMainHandItem().set(HammerRegistry.HAMMER_ACTION.get(), HammerAction.THROW);
             p.teleportTo(p.level(), ore.getX() + 0.5, ore.getY() - 1, ore.getZ() - 6.5, Set.of(), 0f, 0f, true);
         });
         t.awaitClient("See the charged-throw lane", mc -> mc.player.position().distanceToSqr(Vec3.atCenterOf(ore.north(7))) < 6
                 && mc.level.getBlockState(ore).is(Blocks.DIAMOND_ORE) && mc.player.getMainHandItem().is(HammerRegistry.HAMMER.get()));
-        t.client("Hold the mapped throw key", mc -> press(HammerKey.THROW_ITEM.mapping()));
+        t.client("Hold the optional Hammer Use key", mc -> {
+            bindHammerUse();
+            press(HammerKey.USE_HAMMER.mapping());
+        });
         t.awaitServer("Reach the ore-strike threshold with the Hammer still in hand", p -> {
             var hold = HammerRegistry.throwHold(p);
             return hold != null && p.level().getGameTime() - hold.start() >= ChargedThrowPayload.HOLD_TICKS
                     && p.getMainHandItem().is(HammerRegistry.HAMMER.get());
         });
         t.screenshot("tempest-throw-ready-first");
-        t.client("Release the mapped throw key", mc -> HammerKey.THROW_ITEM.mapping().setDown(false));
+        t.client("Release the optional Hammer Use key", mc -> HammerKey.USE_HAMMER.mapping().setDown(false));
         t.awaitServer("Strike only the diamond vein and debit the flying Hammer", p -> {
             if (!p.level().isEmptyBlock(ore) || !p.level().isEmptyBlock(ore.east())) return false;
             Playtest.require(p.level().getBlockState(ore.south()).is(Blocks.IRON_ORE), "The Hammer dug into another ore");

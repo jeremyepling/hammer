@@ -207,7 +207,7 @@ public class HammerItem extends Item {
         tooltipComponents.accept(toolConfig.withMiningSpeed(toolConfig.effectiveSpeed(stage)).speedDescription());
         if (stage.capacity() > 0) {
             tooltipComponents.accept(Component.translatable("tooltip.hammer.hammer.charge", charge(itemStack), stage.capacity()));
-            tooltipComponents.accept(Component.translatable("tooltip.hammer.hammer.ore_strike", Component.keybind("key.hammer.throw_item")));
+            tooltipComponents.accept(Component.translatable("tooltip.hammer.hammer.ore_strike", Component.keybind("key.use")));
         }
         super.appendHoverText(itemStack, context, tooltipDisplay, tooltipComponents, tooltipFlag);
     }

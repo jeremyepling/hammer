@@ -127,7 +127,7 @@ final class HammerProgressionGameTests {
         var ore = h.absolutePos(new BlockPos(0, 3, 0));
         p.level().setBlockAndUpdate(ore, Blocks.DIAMOND_ORE.defaultBlockState());
         p.setPos(Vec3.atCenterOf(ore.north(4)));
-        ChargedThrowPayload.key(p, ChargedThrowPayload.PRESS);
+        ChargedThrowPayload.begin(p, InteractionHand.MAIN_HAND);
         h.runAfterDelay(ChargedThrowPayload.HOLD_TICKS + 1, () -> {
             ChargedThrowPayload.key(p, ChargedThrowPayload.RELEASE);
             var entities = p.level().getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == p);

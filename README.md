@@ -102,7 +102,7 @@ Each Hammer remembers its settings.
 | Right-click on the ground | Use the selected ability. |
 | Right-click off the ground | Attempt a Kinetic Ground Slam. |
 | **R** / **M** | Call lightning / teleport to the surface with the corresponding ability. |
-| Tap / hold **T** | Throw / charge an ore-mining throw. Release to throw. |
+| **Use Hammer** (unassigned) | Optional second binding for the usual Use action while holding a Hammer. |
 
 While holding **C**, click a mining shape on the left and a grounded ability on the right, in either order. Each click sets that wheel immediately. Hover highlights a wedge. Release **C** to close the wheels and keep your choices. You can change just one wheel or close both without changing either. The right wheel’s center switches to **Settings** and back. Use **Tab** to reach either wheel, arrow keys to move around it, and **Enter** to select. Press **Esc** to close.
 
@@ -162,7 +162,7 @@ Enable **Auto torches** in the held Hammer’s **Settings** wheel (hold **C**). 
 
 The standard Hammer throw starts returning at 32 blocks from launch if it reaches that distance before hitting anything.
 
-Aim a Resonant or Tempest Hammer at exposed ore. Hold **T**, or hold **Use** when the right-click action selects Throw. Release after the ready message (20 server ticks) for an ore strike. Releasing earlier throws normally. A Forged Hammer throws normally with either gesture. On impact, the Hammer mines connected ore using its own Fortune or Silk Touch, vein matching and block limit. Each block it removes costs one charge. A missed throw, a non-ore impact from a charged throw, or a denied break costs nothing. Stock quick throws and held mining are free. Hammers configured to break blocks on ordinary impact also spend one charge per successful break.
+Aim a Resonant or Tempest Hammer at exposed ore. When the Hammer action selects Throw, hold Minecraft's **Use** control (right-click by default) or the optional **Use Hammer** binding. Release after the ready message (20 server ticks) for an ore strike. Releasing earlier throws normally. A Forged Hammer always throws normally. On impact, the Hammer mines connected ore using its own Fortune or Silk Touch, vein matching and block limit. Each block it removes costs one charge. A missed throw, a non-ore impact from a charged throw, or a denied break costs nothing. Stock quick throws and held mining are free. Hammers configured to break blocks on ordinary impact also spend one charge per successful break.
 
 Returning mining throws bring the block loot to your inventory and leave overflow at your feet. Mining experience stays at the impact site.
 

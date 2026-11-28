@@ -2,7 +2,7 @@
   "item.hammer.hammer": "Hammer",
   "entity.hammer.thrown_item": "Thrown Item",
   "key.hammer.summon_lightning": "Summon Lightning",
-  "key.hammer.throw_item": "Throw Item",
+  "key.hammer.use_hammer": "Use Hammer",
   "key.hammer.teleport_surface": "Teleport to Surface",
   "key.hammer.cycle_mining_mode": "Hammer control (tap, double-tap or hold)",
   "gui.hammer.hammer_action.auto": "Auto",

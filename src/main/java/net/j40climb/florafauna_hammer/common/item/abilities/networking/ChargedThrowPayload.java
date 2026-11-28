@@ -16,7 +16,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 
 public record ChargedThrowPayload(int action) implements CustomPacketPayload {
-    public static final int PRESS = 0, RELEASE = 1, CANCEL = 2;
+    public static final int RELEASE = 1, CANCEL = 2;
     public static final int HOLD_TICKS = 20;
     public static final Type<ChargedThrowPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "charged_throw"));
     public static final StreamCodec<ByteBuf, ChargedThrowPayload> STREAM_CODEC =
@@ -35,9 +35,7 @@ public record ChargedThrowPayload(int action) implements CustomPacketPayload {
     }
 
     public static void key(ServerPlayer player, int action) {
-        if (action == PRESS) {
-            begin(player, InteractionHand.MAIN_HAND);
-        } else if (action == CANCEL || action == RELEASE) {
+        if (action == CANCEL || action == RELEASE) {
             var hold = HammerRegistry.throwHold(player);
             HammerRegistry.setThrowHold(player, null);
             if (action == RELEASE && hold != null && hold.valid(player)) {
