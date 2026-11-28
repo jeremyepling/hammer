@@ -29,8 +29,9 @@ import java.util.function.Supplier;
 @Mixin(ServerPlayerGameMode.class)
 abstract class HammerMiningMixin {
     @Shadow @Final protected ServerPlayer player;
-    @Unique private Direction hammer$activeFace = Direction.UP;
-    @Unique private Direction hammer$delayedFace = Direction.UP;
+    @Shadow private boolean isDestroyingBlock;
+    @Unique private @Nullable Direction hammer$activeFace;
+    @Unique private @Nullable Direction hammer$delayedFace;
     @Unique private @Nullable BlockPos hammer$patternTarget;
     @Unique private Direction hammer$patternFace = Direction.UP;
 
@@ -48,6 +49,12 @@ abstract class HammerMiningMixin {
             opcode = Opcodes.PUTFIELD, shift = At.Shift.AFTER))
     private void hammer$rememberDelayedFace(CallbackInfo ci) {
         hammer$delayedFace = hammer$activeFace;
+        hammer$activeFace = null;
+    }
+
+    @Inject(method = {"handleBlockBreakAction", "tick"}, at = @At("RETURN"))
+    private void hammer$clearFinishedActiveHit(CallbackInfo ci) {
+        if (!isDestroyingBlock) hammer$activeFace = null;
     }
 
     @WrapOperation(method = "handleBlockBreakAction", at = @At(value = "INVOKE",
@@ -57,17 +64,21 @@ abstract class HammerMiningMixin {
                                               @Local(argsOnly = true) ServerboundPlayerActionPacket.Action action,
                                               @Local(argsOnly = true) Direction face) {
         Direction hitFace = action == ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK ? face : hammer$activeFace;
+        if (action == ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK) hammer$activeFace = null;
         hammer$withPatternHit(pos, hitFace, () -> original.call(gameMode, pos, sequence, reason));
     }
 
     @WrapOperation(method = "tick", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/server/level/ServerPlayerGameMode;destroyBlock(Lnet/minecraft/core/BlockPos;)Z"))
     private boolean hammer$finishDelayedHit(ServerPlayerGameMode gameMode, BlockPos pos, Operation<Boolean> original) {
-        return hammer$withPatternHit(pos, hammer$delayedFace, () -> original.call(gameMode, pos));
+        Direction hitFace = hammer$delayedFace;
+        hammer$delayedFace = null;
+        return hammer$withPatternHit(pos, hitFace, () -> original.call(gameMode, pos));
     }
 
     @Unique
-    private <T> T hammer$withPatternHit(BlockPos pos, Direction face, Supplier<T> action) {
+    private <T> T hammer$withPatternHit(BlockPos pos, @Nullable Direction face, Supplier<T> action) {
+        if (face == null) return action.get();
         BlockPos previousTarget = hammer$patternTarget;
         Direction previousFace = hammer$patternFace;
         hammer$patternTarget = pos;
