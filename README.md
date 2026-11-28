@@ -160,7 +160,11 @@ Enable **Auto torches** in the held Hammer’s **Settings** wheel (hold **C**). 
 
 ## Charged Hammer Throw
 
-Aim at an exposed ore block and hold the throw key until the ready message appears (20 server ticks), then release. On impact the Hammer mines connected ore using its own Fortune or Silk Touch, vein matching and block limit, then returns. Stone or a denied center hit spends no charge. Other ore types touching the vein stay in place. Each ore block actually removed costs one charge. Ordinary swings and quick throws are free.
+The standard Hammer throw starts returning at 32 blocks from launch if it reaches that distance before hitting anything.
+
+Aim a Resonant or Tempest Hammer at exposed ore and hold the throw key until the ready message appears (20 server ticks), then release. On impact, the Hammer mines connected ore using its own Fortune or Silk Touch, vein matching and block limit. Each block it removes costs one charge. A missed throw, a non-ore impact from a charged throw, or a denied break costs nothing. Stock quick throws and held mining are free. Hammers configured to break blocks on ordinary impact also spend one charge per successful break.
+
+Returning mining throws bring the block loot to your inventory and leave overflow at your feet. Mining experience stays at the impact site.
 
 Powered Hammers recover one charge per second while held in either hand, up to 64 for Resonant or 96 for Tempest. The inventory bar and tooltip show the remaining charge.
 
