@@ -48,7 +48,7 @@ try {
         }
         Set-Content -LiteralPath (Join-Path $gameDir '.florafauna-playtest') -Value $Scenario
         $optionsVersion = if ($Target -eq '26.1') { 4786 } else { 5023 }
-        $gameOptions = @("version:$optionsVersion",'pauseOnLostFocus:false','key_key.hammer.throw_item:key.keyboard.comma','skipMultiplayerWarning:true','onboardAccessibility:false','tutorialStep:none','autoJump:false','renderDistance:4','simulationDistance:5')
+        $gameOptions = @("version:$optionsVersion",'pauseOnLostFocus:false','skipMultiplayerWarning:true','onboardAccessibility:false','tutorialStep:none','autoJump:false','renderDistance:4','simulationDistance:5')
         if ($Scenario -eq 'radial') { $gameOptions += 'key_key.hammer.cycle_mining_mode:key.keyboard.v' }
         $gameOptions | Set-Content -LiteralPath (Join-Path $gameDir 'options.txt')
     } finally { if ($lock) { $lock.Dispose() } }
