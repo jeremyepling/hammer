@@ -75,7 +75,8 @@ public record ThrowItemPayload(boolean mainHand) implements CustomPacketPayload 
         if (charged) entity.armOreStrike();
 
         // Launch in direction player is looking
-        entity.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0f, 2.5f, 1.0f);
+        var aim = player.getLookAngle();
+        entity.shoot(aim.x, aim.y, aim.z, 2.5f, 0.0f);
 
         // Add entity to world
         if (!level.addFreshEntity(entity)) return;
