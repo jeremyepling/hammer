@@ -38,10 +38,11 @@ import net.minecraft.world.level.storage.TagValueOutput;
 
 final class HammerAbilityGameTests {
     static void register(HammerGameTests.Registrar tests) {
-        HammerGameTests.registerTest(tests, "hammer_legacy_saved_stack", HammerAbilityGameTests::legacySavedStack);
+        HammerGameTests.registerTest(tests, "hammer_namespaced_saved_stack", HammerAbilityGameTests::namespacedSavedStack);
         HammerGameTests.registerTest(tests, "hammer_fresh_and_configured_loot", HammerAbilityGameTests::checkConfigurations);
         HammerGameTests.registerTest(tests, "hammer_block_action_dispatch", HammerAbilityGameTests::checkBlockActions);
         HammerGameTests.registerTest(tests, "hammer_throw_single_item_and_reload", HammerAbilityGameTests::checkThrow);
+        HammerGameTests.registerTest(tests, "hammer_throw_straight_flight", HammerAbilityGameTests::straightFlight);
         HammerGameTests.registerTest(tests, "hammer_throw_rejected_or_inventory_full", HammerAbilityGameTests::checkThrowFailure);
     }
 
@@ -53,13 +54,12 @@ final class HammerAbilityGameTests {
         return player;
     }
 
-    private static void legacySavedStack(GameTestHelper helper) {
-        // This represents an inventory stack saved before Hammer became its own mod.
+    private static void namespacedSavedStack(GameTestHelper helper) {
         var saved = JsonParser.parseString("""
-                {"id":"florafauna:hammer", "count":1, "components":{
-                  "florafauna:hammer_charge":17, "florafauna:hammer_action":"strip",
-                  "florafauna:multi_block_mining":{"shape":"stairs_down","radius":0,"maxBlocksToBreak":24},
-                  "florafauna:tool_config":{"fortune":false,"silkTouch":true,"miningSpeed":"standard"}
+                {"id":"hammer:hammer", "count":1, "components":{
+                  "hammer:hammer_charge":17, "hammer:hammer_action":"strip",
+                  "hammer:multi_block_mining":{"shape":"stairs_down","radius":0,"maxBlocksToBreak":24},
+                  "hammer:tool_config":{"fortune":false,"silkTouch":true,"miningSpeed":"standard"}
                 }}
                 """);
         var ops = helper.getLevel().registryAccess().createSerializationContext(JsonOps.INSTANCE);
@@ -69,7 +69,7 @@ final class HammerAbilityGameTests {
         var mode = stack.get(HammerRegistry.MULTI_BLOCK_MINING.get());
         helper.assertTrue(mode.shape() == MiningShape.TUNNEL_DOWN && mode.maxBlocksToBreak() == 24
                 && stack.get(HammerRegistry.TOOL_CONFIG.get()).equals(new ToolConfig(false, true, MiningSpeed.STANDARD)),
-                "Legacy mining settings did not decode with their original defaults");
+                "Saved mining settings did not decode with their original defaults");
         helper.assertTrue(stack.is(ItemTags.AXES) && stack.is(ItemTags.HOES) && stack.is(ItemTags.SHOVELS)
                 && stack.is(ItemTags.PICKAXES), "The installed Hammer must belong to all four tool tags");
         helper.succeed();
@@ -196,6 +196,58 @@ final class HammerAbilityGameTests {
         var drops = helper.getLevel().getEntitiesOfClass(ItemEntity.class, player.getBoundingBox().inflate(3),
                 e -> ItemStack.matches(expected, e.getItem()));
         helper.assertTrue(entity.isRemoved() && drops.size() == 1, "A full inventory should leave one recoverable Hammer");
+        helper.succeed();
+    }
+
+    private static void straightFlight(GameTestHelper helper) {
+        var player = player(helper);
+        player.setPos(player.position().add(0, 12, 0));
+        player.setYRot(0);
+        player.setXRot(0);
+        var hammer = HammerStage.FORGED.createStack();
+        hammer.set(HammerRegistry.HAMMER_ACTION.get(), HammerAction.THROW);
+        var expected = hammer.copy();
+        player.setItemInHand(InteractionHand.MAIN_HAND, hammer);
+        var level = helper.getLevel();
+        var target = BlockPos.containing(player.getEyePosition()).south(9);
+        var previousBlock = level.getBlockState(target);
+        level.setBlockAndUpdate(target, Blocks.STONE.defaultBlockState());
+        try {
+            helper.assertTrue(TestPlatform.clickAir(player, InteractionHand.MAIN_HAND), "Throw action was not accepted");
+            var projectiles = level.getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == player);
+            helper.assertTrue(projectiles.size() == 1 && player.getMainHandItem().isEmpty(), "Expected one Hammer in flight");
+            var projectile = projectiles.getFirst();
+            var start = projectile.position();
+            var catchPoint = player.getEyePosition();
+            boolean reachedTarget = false;
+            boolean observedReturn = false;
+            for (int tick = 0; tick < 40 && !projectile.isRemoved(); tick++) {
+                Vec3 before = projectile.position();
+                projectile.tick();
+                if (projectile.isRemoved()) break;
+                Vec3 after = projectile.position();
+                if (reachedTarget) {
+                    Vec3 toOwner = catchPoint.subtract(before);
+                    Vec3 step = after.subtract(before);
+                    helper.assertTrue(step.dot(toOwner) > 0 && step.cross(toOwner.normalize()).length() < 0.001,
+                            "Hammer did not move straight back on return tick " + tick + ": " + step);
+                    observedReturn = true;
+                } else {
+                    helper.assertTrue(Math.abs(after.x - start.x) < 0.001 && Math.abs(after.y - start.y) < 0.001
+                                    && after.z > before.z && after.z <= target.getZ() + 0.001,
+                            "Level throw deviated from its aim line or passed the target on tick " + tick + ": " + after);
+                    if (projectile.isReturning()) {
+                        helper.assertTrue(Math.abs(after.z - target.getZ()) < 0.1, "Hammer turned before touching stone");
+                        reachedTarget = true;
+                    }
+                }
+            }
+            helper.assertTrue(reachedTarget && observedReturn && projectile.isRemoved()
+                            && ItemStack.matches(expected, player.getMainHandItem()),
+                    "Hammer must reach the target, fly back, and be caught");
+        } finally {
+            level.setBlockAndUpdate(target, previousBlock);
+        }
         helper.succeed();
     }
 

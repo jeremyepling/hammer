@@ -18,7 +18,7 @@ tasks.named('processResources') {
             itemKey: loader == 'fabric' ? 'base' : 'items'
     ]
     inputs.properties ingredientFields
-    filesMatching(['data/florafauna/recipe/resonant_hammer.json', 'data/florafauna/recipe/tempest_hammer.json']) {
+    filesMatching(['data/hammer/recipe/resonant_hammer.json', 'data/hammer/recipe/tempest_hammer.json']) {
         expand ingredientFields
     }
 }

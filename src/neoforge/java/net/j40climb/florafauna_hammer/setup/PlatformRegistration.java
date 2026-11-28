@@ -25,10 +25,10 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 class PlatformRegistration {
-    private static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(HammerMod.CONTENT_NAMESPACE);
-    private static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(BuiltInRegistries.ENTITY_TYPE, HammerMod.CONTENT_NAMESPACE);
-    private static final DeferredRegister.DataComponents COMPONENTS = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, HammerMod.CONTENT_NAMESPACE);
-    private static final DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, HammerMod.CONTENT_NAMESPACE);
+    private static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(HammerMod.MOD_ID);
+    private static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(BuiltInRegistries.ENTITY_TYPE, HammerMod.MOD_ID);
+    private static final DeferredRegister.DataComponents COMPONENTS = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, HammerMod.MOD_ID);
+    private static final DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, HammerMod.MOD_ID);
 
     public static final Supplier<AttachmentType<ChargedThrowPayload.Hold>> THROW_HOLD = ATTACHMENTS.register("throw_hold",
             () -> AttachmentType.builder(() -> new ChargedThrowPayload.Hold(ItemStack.EMPTY, Level.OVERWORLD, 0)).build());

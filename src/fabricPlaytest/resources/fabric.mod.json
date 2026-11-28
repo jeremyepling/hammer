@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "id": "florafauna_hammer_playtest",
+  "id": "hammer_playtest",
   "version": "1",
   "name": "Hammer client playtests",
   "environment": "client",
   "entrypoints": {
     "client": ["net.j40climb.florafauna_hammer.playtest.FabricHammerPlaytest"]
   },
-  "depends": { "florafauna_hammer": "*" }
+  "depends": { "hammer": "*" }
 }

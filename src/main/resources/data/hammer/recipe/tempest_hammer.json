@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:smithing_transform",
+  "base": {
+    "${typeKey}": "${loader}:components",
+    "${itemKey}": "hammer:hammer",
+    "components": {
+      "hammer:hammer_stage": "resonant"
+    }
+  },
+  "addition": "hammer:tempest_core",
+  "result": {
+    "id": "hammer:hammer",
+    "components": {
+      "hammer:hammer_stage": "tempest"
+    }
+  }
+}

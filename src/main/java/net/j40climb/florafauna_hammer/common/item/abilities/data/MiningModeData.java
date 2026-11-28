@@ -86,7 +86,7 @@ public record MiningModeData(MiningShape shape, int radius, int maxBlocksToBreak
     }
 
     public Component modeDescription() {
-        return Component.translatable("tooltip.florafauna.hammer.mode",
-                Component.translatable("mining_shape.florafauna." + shape.getSerializedName()));
+        return Component.translatable("tooltip.hammer.hammer.mode",
+                Component.translatable("mining_shape.hammer." + shape.getSerializedName()));
     }
 }

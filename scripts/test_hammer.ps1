@@ -57,8 +57,8 @@ try {
             '26.3' { 5023 }
             '26.4' { if ($Loader -eq 'fabric') { 5131 } else { 5130 } }
         }
-        $gameOptions = @("version:$optionsVersion",'pauseOnLostFocus:false','key_key.florafauna.throw_item:key.keyboard.comma','skipMultiplayerWarning:true','onboardAccessibility:false','tutorialStep:none','autoJump:false','renderDistance:4','simulationDistance:5')
-        if ($Scenario -eq 'radial') { $gameOptions += 'key_key.florafauna.cycle_mining_mode:key.keyboard.v' }
+        $gameOptions = @("version:$optionsVersion",'pauseOnLostFocus:false','key_key.hammer.throw_item:key.keyboard.comma','skipMultiplayerWarning:true','onboardAccessibility:false','tutorialStep:none','autoJump:false','renderDistance:4','simulationDistance:5')
+        if ($Scenario -eq 'radial') { $gameOptions += 'key_key.hammer.cycle_mining_mode:key.keyboard.v' }
         $gameOptions | Set-Content -LiteralPath (Join-Path $gameDir 'options.txt')
     } finally { if ($lock) { $lock.Dispose() } }
 

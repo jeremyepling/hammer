@@ -12,7 +12,7 @@ import net.minecraft.server.level.ServerPlayer;
 
 public record SelectHammerActionPayload(int slot, HammerAction action) implements CustomPacketPayload {
     public static final Type<SelectHammerActionPayload> TYPE = new Type<>(
-            Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "select_hammer_action"));
+            Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "select_hammer_action"));
     public static final StreamCodec<ByteBuf, SelectHammerActionPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT, SelectHammerActionPayload::slot,
             HammerAction.STREAM_CODEC, SelectHammerActionPayload::action, SelectHammerActionPayload::new);

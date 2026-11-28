@@ -29,7 +29,7 @@ public enum HammerAction implements StringRepresentable {
     }
 
     public Component label() {
-        return Component.translatable("gui.florafauna.hammer_action." + name);
+        return Component.translatable("gui.hammer.hammer_action." + name);
     }
 
     public boolean availableOn(ItemStack tool) {

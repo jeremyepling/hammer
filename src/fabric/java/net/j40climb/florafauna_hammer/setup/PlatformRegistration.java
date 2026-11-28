@@ -26,7 +26,7 @@ class PlatformRegistration {
     private static final AttachmentType<GroundSlam.Pending> PENDING_SLAM = AttachmentRegistry.create(id("pending_slam"));
 
     private static Identifier id(String path) {
-        return Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, path);
+        return Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, path);
     }
 
     static Supplier<Item> item(String path, Function<Item.Properties, Item> factory) {

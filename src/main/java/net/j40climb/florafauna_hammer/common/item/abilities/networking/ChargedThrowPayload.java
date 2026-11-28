@@ -18,7 +18,7 @@ import net.minecraft.world.item.ItemStack;
 public record ChargedThrowPayload(int action) implements CustomPacketPayload {
     public static final int PRESS = 0, RELEASE = 1, CANCEL = 2;
     public static final int HOLD_TICKS = 20;
-    public static final Type<ChargedThrowPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "charged_throw"));
+    public static final Type<ChargedThrowPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "charged_throw"));
     public static final StreamCodec<ByteBuf, ChargedThrowPayload> STREAM_CODEC =
             StreamCodec.composite(ByteBufCodecs.VAR_INT, ChargedThrowPayload::action, ChargedThrowPayload::new);
 
@@ -52,7 +52,7 @@ public record ChargedThrowPayload(int action) implements CustomPacketPayload {
         if (hold.hammer != player.getMainHandItem() || hold.dimension != player.level().dimension() || !player.isAlive() || player.isSpectator()) {
             HammerRegistry.setThrowHold(player, null);
         } else if (HammerStage.of(hold.hammer) != HammerStage.FORGED && player.level().getGameTime() - hold.start == HOLD_TICKS) {
-            player.sendOverlayMessage(Component.translatable("ability.florafauna.ore_strike.ready"));
+            player.sendOverlayMessage(Component.translatable("ability.hammer.ore_strike.ready"));
             HammerCorePayload.send(player, InteractionHand.MAIN_HAND, HammerCorePayload.Cue.READY);
         }
     }

@@ -23,7 +23,7 @@ import net.minecraft.world.item.ItemStack;
 public record ThrowItemPayload(boolean mainHand) implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<ThrowItemPayload> TYPE =
-            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "throw_item"));
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "throw_item"));
 
     public static final StreamCodec<ByteBuf, ThrowItemPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.BOOL,
@@ -75,7 +75,8 @@ public record ThrowItemPayload(boolean mainHand) implements CustomPacketPayload 
         if (charged) entity.armOreStrike();
 
         // Launch in direction player is looking
-        entity.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0f, 2.5f, 1.0f);
+        var aim = player.getLookAngle();
+        entity.shoot(aim.x, aim.y, aim.z, 2.5f, 0.0f);
 
         // Add entity to world
         if (!level.addFreshEntity(entity)) return;

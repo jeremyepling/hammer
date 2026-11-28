@@ -14,7 +14,7 @@ import net.minecraft.world.InteractionHand;
 
 public record SelectMiningModePayload(int slot, MiningShape shape, boolean toggleFavorite) implements CustomPacketPayload {
     public static final Type<SelectMiningModePayload> TYPE = new Type<>(
-            Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "select_mining_mode"));
+            Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "select_mining_mode"));
     public static final StreamCodec<ByteBuf, SelectMiningModePayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT, SelectMiningModePayload::slot,
             MiningShape.STREAM_CODEC, SelectMiningModePayload::shape,

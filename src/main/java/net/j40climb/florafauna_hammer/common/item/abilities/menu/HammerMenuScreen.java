@@ -36,8 +36,8 @@ import org.lwjgl.glfw.GLFW;
 *///?}
 
 public final class HammerMenuScreen extends Screen {
-    private static final String MENU = "gui.florafauna.hammer_menu.";
-    private static final String CONFIG = "gui.florafauna.tool_config.";
+    private static final String MENU = "gui.hammer.hammer_menu.";
+    private static final String CONFIG = "gui.hammer.tool_config.";
 
     private static final List<MiningShape> SHAPES = List.of(
             MiningShape.SINGLE, MiningShape.FLAT_3X3, MiningShape.FLAT_5X5, MiningShape.FLAT_7X7,
@@ -64,7 +64,7 @@ public final class HammerMenuScreen extends Screen {
     private double pointerX, pointerY;
 
     public HammerMenuScreen(int slot, ItemStack stack) {
-        super(Component.translatable("item.florafauna.hammer"));
+        super(Component.translatable("item.hammer.hammer"));
         this.slot = slot;
         tool = stack.copy();
         stage = HammerStage.of(stack);
@@ -96,7 +96,7 @@ public final class HammerMenuScreen extends Screen {
             slice.setSelected(mining != null && shape == mining.shape());
             slice.setFavorite(mining != null && mining.isFavorite(shape));
             shapeButtons.put(shape, slice);
-            details.put(slice, Component.translatable("mining_shape.florafauna." + shape.getSerializedName()));
+            details.put(slice, Component.translatable("mining_shape.hammer." + shape.getSerializedName()));
             if (!stage.allows(shape)) hints.put(slice, requires(HammerStage.required(shape)));
         }
         addRenderableWidget(new HubButton(leftX, CommonComponents.GUI_DONE, tool, ignored -> onClose()));

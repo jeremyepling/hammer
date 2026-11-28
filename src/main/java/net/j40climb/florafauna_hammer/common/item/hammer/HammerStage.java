@@ -32,7 +32,7 @@ public enum HammerStage implements StringRepresentable {
     }
 
     public Component label() {
-        return Component.translatable("item.florafauna.hammer." + name);
+        return Component.translatable("item.hammer.hammer." + name);
     }
 
     public int capacity() {

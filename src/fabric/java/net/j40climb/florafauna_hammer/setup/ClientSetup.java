@@ -3,6 +3,7 @@ package net.j40climb.florafauna_hammer.setup;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.j40climb.florafauna_hammer.HammerMod;
 import net.j40climb.florafauna_hammer.common.item.projectile.ThrownItemRenderer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -16,7 +17,6 @@ import net.j40climb.florafauna_hammer.common.item.projectile.ThrownItemEntity;
 *///?}
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.j40climb.florafauna_hammer.client.*;
-import net.j40climb.florafauna_hammer.common.item.abilities.multiblock.MultiBlockOutlineRenderer;
 import net.j40climb.florafauna_hammer.common.item.abilities.multiblock.MultiBlockVisualFeedback;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.HammerCorePayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.SeismicScanPayload;
@@ -24,6 +24,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
+
 import java.util.List;
 import java.util.function.BiConsumer;
 
@@ -65,8 +66,9 @@ public final class ClientSetup implements net.fabricmc.api.ClientModInitializer 
             MultiBlockVisualFeedback.onClientTick();
             SeismicScanEffects.tick();
         });
-        HudElementRegistry.addFirst(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "ore_echoes"), SeismicScanEffects::drawMarkers);
-        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "mining_preview"), MultiBlockOutlineRenderer::drawHud);
+        HudElementRegistry.addFirst(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "ore_echoes"), SeismicScanEffects::drawMarkers);
+        FabricLoader.getInstance().getObjectShare().put(HammerMod.MOD_ID + ":tool_diagnostics",
+                (BiConsumer<ItemStack, List<String>>) HammerDiagnostics::append);
         FabricHammerOutlines.register();
     }
 }

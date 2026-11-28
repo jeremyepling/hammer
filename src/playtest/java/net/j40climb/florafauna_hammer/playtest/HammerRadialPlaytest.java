@@ -14,7 +14,7 @@ import net.minecraft.network.chat.Component;
 import com.mojang.blaze3d.platform.InputConstants;
 
 final class HammerRadialPlaytest {
-    private static final String MENU = "gui.florafauna.hammer_menu.";
+    private static final String MENU = "gui.hammer.hammer_menu.";
 
     static void steps(Playtest t) {
         t.server("Equip a fresh Hammer in the test plot", HammerPlaytest::prepare);
@@ -83,7 +83,7 @@ final class HammerRadialPlaytest {
         t.screenshot("hammer-wheels-settings");
         t.client("Change the left wheel while Settings stays open", mc -> select(mc, "shape.bore"));
         t.client("Cycle the right wheel's speed setting", mc -> HammerPlaytest.click(mc, HammerPlaytest.button(mc,
-                Component.translatable("gui.florafauna.tool_config.speed.efficiency"))));
+                Component.translatable("gui.hammer.tool_config.speed.efficiency"))));
         t.awaitServer("Keep Bore, Scan and Instabreak together", p -> {
             var tool = p.getMainHandItem();
             return tool.get(HammerRegistry.TOOL_CONFIG.get()).miningSpeed() == MiningSpeed.INSTABREAK

@@ -1,5 +1,6 @@
 package net.j40climb.florafauna_hammer.common.item.abilities.multiblock;
 
+import com.mojang.logging.LogUtils;
 //? if <26.3 {
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
@@ -12,7 +13,6 @@ import com.mojang.renderpearl.api.pipeline.ColorTargetState;
 /*import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 *///?}
 import net.j40climb.florafauna_hammer.HammerMod;
-import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningModeData;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.client.Minecraft;
 //? if <26.4 {
@@ -32,7 +32,6 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -40,8 +39,6 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.DeltaTracker;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import java.util.List;
@@ -53,11 +50,11 @@ public class MultiBlockOutlineRenderer {
     // Show planned placements and newly exposed lava even inside the unbroken wall.
     //? if <26.4 {
     public static final RenderPipeline PREVIEW_PIPELINE = RenderPipeline.builder(RenderPipelines.LINES_SNIPPET)
-            .withLocation(Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "pipeline/hammer_preview"))
+            .withLocation(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "pipeline/hammer_preview"))
             .withDepthStencilState(Optional.empty())
             .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
             .build();
-    private static final RenderType PREVIEW_LINES = RenderType.create("florafauna_hammer_preview",
+    private static final RenderType PREVIEW_LINES = RenderType.create("hammer_preview",
             RenderSetup.builder(PREVIEW_PIPELINE).createRenderSetup());
     //?} else {
     /*private static final LineRenderPipelineVariant PREVIEW_VARIANT = new LineRenderPipelineVariant(
@@ -71,31 +68,24 @@ public class MultiBlockOutlineRenderer {
     private static final int LAVA_COLOR = 0xFFFF780D;
     private static final Map<Direction, VoxelShape> FACE_OUTLINES = Shapes.rotateAll(Shapes.box(0, 0, 0, 1, 1, 0.005));
 
-    private static BlockPos previewTarget;
-    private static int previewCount;
-    private static long previewTick;
-
     //? if <26.4 {
-    public static void drawHud(GuiGraphicsExtractor gui, DeltaTracker delta) {
-    //?} else {
-    /*public static void drawHud(GuiGraphicsExtractor gui) {
-    *///?}
-        var mc = Minecraft.getInstance();
-        //? if <26.3 {
-        if (mc.options.hideGui || mc.player == null || mc.screen != null
-        //?} else {
-        /*if (mc.gui.hud.isHidden() || mc.player == null || mc.gui.screen() != null
-        *///?}
-                || !(mc.hitResult instanceof BlockHitResult hit) || !hit.getBlockPos().equals(previewTarget)
-                || Math.abs(mc.player.level().getGameTime() - previewTick) > 1 || previewCount == 0) return;
-        var stack = mc.player.getMainHandItem();
-        if (!stack.has(HammerRegistry.MULTI_BLOCK_MINING.get())) return;
-        var mining = MiningModeData.effective(stack);
-        var shape = Component.translatable("mining_shape.florafauna." + mining.shape().getSerializedName());
-        var key = previewCount == 1 ? "hud.florafauna_hammer.mining_preview.single" : "hud.florafauna_hammer.mining_preview";
-        var label = Component.translatable(key, shape, previewCount);
-        gui.text(mc.font, label, (gui.guiWidth() - mc.font.width(label)) / 2, gui.guiHeight() / 2 + 17, 0xFFDEC9FF);
+    /** Lets Iris shade the through-wall warning and placement lines without changing their depth state. */
+    public static void registerIrisPreviewPipeline() {
+        try {
+            // Iris is an optional client mod. Its public API uses each target's native RenderPipeline type.
+            Class<?> api = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
+            Class<?> program = Class.forName("net.irisshaders.iris.api.v0.IrisProgram");
+            var assignPipeline = api.getMethod("assignPipeline", RenderPipeline.class, program);
+            assignPipeline.invoke(api.getMethod("getInstance").invoke(null),
+                    PREVIEW_PIPELINE, program.getField("LINES").get(null));
+        } catch (ClassNotFoundException | NoSuchMethodException ignored) {
+            // Stock rendering or an Iris release without pipeline registration.
+        } catch (ReflectiveOperationException | LinkageError error) {
+            LogUtils.getLogger().warn("Could not register Hammer's preview pipeline with Iris", error);
+        }
     }
+
+    //?}
 
     public static MultiBlockPatterns.Plan previewPlan(Player player, BlockPos target, Direction hoveredFace) {
         return MultiBlockPatterns.plan(player, player.getMainHandItem(), target, MultiBlockVisualFeedback.previewFace(target, hoveredFace));
@@ -111,9 +101,6 @@ public class MultiBlockOutlineRenderer {
 
         BlockPos target = hit.getBlockPos();
         var plan = previewPlan(player, target, hit.getDirection());
-        previewTarget = target.immutable();
-        previewTick = player.level().getGameTime();
-        previewCount = plan.blocks().size();
         List<VoxelShape> outlines = plan.blocks().stream()
                 .filter(pos -> !pos.equals(target))
                 .map(pos -> level.getBlockState(pos)
@@ -167,9 +154,11 @@ public class MultiBlockOutlineRenderer {
         var target = preview.target();
         poseStack.pushPose();
         poseStack.translate(target.getX() - camera.x, target.getY() - camera.y, target.getZ() - camera.z);
+        // Match the vanilla outline's transparency mode. Iris maps the classic line pipeline.
+        var miningLines = Minecraft.getInstance().gameRenderer.useImprovedTransparency()
+                ? RenderTypes.linesTranslucentNoDepthWrite() : RenderTypes.linesTranslucent();
         for (VoxelShape outline : preview.outlines()) {
-            collector.submitShapeOutline(poseStack, outline, RenderTypes.linesTranslucentNoDepthWrite(),
-                    0xADBCA0E8, 2.0F, translucent);
+            collector.submitShapeOutline(poseStack, outline, miningLines, 0xADBCA0E8, 2.0F, translucent);
         }
         for (VoxelShape stair : preview.placements()) {
             collector.submitShapeOutline(poseStack, stair, PREVIEW_LINES, PLACEMENT_COLOR, 2.5F, translucent);

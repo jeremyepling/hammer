@@ -9,10 +9,11 @@ import net.minecraft.client.renderer.item.ItemModelResolver;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Renderer for ThrownItemEntity.
- * Renders the thrown item's model oriented in the direction of travel.
+ * Renders the thrown Hammer with its handle toward the thrower.
  */
 public class ThrownItemRenderer extends EntityRenderer<ThrownItemEntity, ThrownItemRenderState> {
 
@@ -33,12 +34,16 @@ public class ThrownItemRenderer extends EntityRenderer<ThrownItemEntity, ThrownI
     @Override
     public void extractRenderState(ThrownItemEntity entity, ThrownItemRenderState state, float partialTick) {
         super.extractRenderState(entity, state, partialTick);
-        state.xRot = entity.getXRot(partialTick);
-        state.yRot = entity.getYRot(partialTick);
-        state.isReturning = entity.isReturning();
-
-        // Extract the item render state
-        this.itemModelResolver.updateForNonLiving(state.item, entity.getThrownItem(), ItemDisplayContext.GROUND, entity);
+        // The untransformed model points head-first along +Y. Aim it away from
+        // the thrower on both legs, independently of the arrow's velocity rotation.
+        var owner = entity.getOwner();
+        Vec3 direction = owner == null
+                ? entity.getDeltaMovement().scale(entity.isNoPhysics() ? -1 : 1)
+                : entity.getPosition(partialTick).subtract(owner.getEyePosition(partialTick));
+        if (direction.lengthSqr() < 1.0e-8 && owner != null) direction = owner.getViewVector(partialTick);
+        state.yRot = (float) Math.toDegrees(Math.atan2(direction.x, direction.z));
+        state.xRot = (float) Math.toDegrees(Math.atan2(direction.horizontalDistance(), direction.y));
+        this.itemModelResolver.updateForNonLiving(state.item, entity.getThrownItem(), ItemDisplayContext.NONE, entity);
     }
 
     @Override
@@ -49,18 +54,16 @@ public class ThrownItemRenderer extends EntityRenderer<ThrownItemEntity, ThrownI
 
         poseStack.pushPose();
 
-        // Rotate to face direction of travel
-        // First rotate around Y to match horizontal direction
+        // Apply the horizontal heading and flight tilt.
         //? if <26.3 {
-        poseStack.mulPose(Axis.YP.rotationDegrees(state.yRot + 90.0f));
+        poseStack.mulPose(Axis.YP.rotationDegrees(state.yRot));
         //?} else {
-        /*poseStack.rotateDegrees(Axis.YP, state.yRot + 90.0f);
+        /*poseStack.rotateDegrees(Axis.YP, state.yRot);
         *///?}
-        // Then pitch forward 90 degrees so item points in direction of travel
         //? if <26.3 {
-        poseStack.mulPose(Axis.XP.rotationDegrees(state.xRot + 90.0f));
+        poseStack.mulPose(Axis.XP.rotationDegrees(state.xRot));
         //?} else {
-        /*poseStack.rotateDegrees(Axis.XP, state.xRot + 90.0f);
+        /*poseStack.rotateDegrees(Axis.XP, state.xRot);
         *///?}
 
         // Scale up slightly for visibility

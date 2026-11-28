@@ -125,7 +125,7 @@ final class HammerProgressionPlaytest {
         HammerPlaytest.openMenu(t);
         t.client("Inspect ability and mining locks on " + stage, mc -> {
             boolean advanced = stage != HammerStage.FORGED, late = stage == HammerStage.TEMPEST;
-            var five = HammerPlaytest.button(mc, Component.translatable("gui.florafauna.hammer_menu.shape.flat_5x5"));
+            var five = HammerPlaytest.button(mc, Component.translatable("gui.hammer.hammer_menu.shape.flat_5x5"));
             var scan = HammerPlaytest.button(mc, HammerRadialPlaytest.actionLabel(HammerAction.SCAN));
             var lightning = HammerPlaytest.button(mc, HammerRadialPlaytest.actionLabel(HammerAction.LIGHTNING));
             Playtest.require(five.active == advanced && scan.active == advanced && lightning.active == late, "Incorrect " + stage + " wheel locks");

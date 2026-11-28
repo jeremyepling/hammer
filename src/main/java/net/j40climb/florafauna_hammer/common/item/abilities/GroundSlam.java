@@ -57,18 +57,18 @@ public final class GroundSlam {
         ItemStack hammer = player.getItemInHand(hand);
         if (!hammer.is(HammerRegistry.HAMMER.get()) || HammerStage.of(hammer) != HammerStage.TEMPEST || player.onGround()) return false;
         if (!canDescend(player) || touchesGround(player)) {
-            player.sendOverlayMessage(Component.translatable("ability.florafauna.slam.invalid"));
+            player.sendOverlayMessage(Component.translatable("ability.hammer.slam.invalid"));
             return false;
         }
         ServerLevel level = player.level();
         long now = level.getGameTime();
         if (HammerRegistry.pendingSlam(player) != null || now < SlamCooldown.readyAt(player)) {
-            player.sendOverlayMessage(Component.translatable("ability.florafauna.slam.cooldown"));
+            player.sendOverlayMessage(Component.translatable("ability.hammer.slam.cooldown"));
             return false;
         }
         int charge = HammerItem.charge(hammer);
         if (charge < CHARGE_COST) {
-            player.sendOverlayMessage(Component.translatable("ability.florafauna.slam.charge", CHARGE_COST));
+            player.sendOverlayMessage(Component.translatable("ability.hammer.slam.charge", CHARGE_COST));
             return false;
         }
         hammer.set(HammerRegistry.HAMMER_CHARGE.get(), charge - CHARGE_COST);

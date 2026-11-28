@@ -96,6 +96,7 @@ public final class HammerPlaytest {
         setVeinPreference(t, false);
         setLighting(t, true);
         setLighting(t, false);
+        HammerAreaOutlinePlaytest.steps(t, WALL);
         interruptSwing(t);
         HammerSinglePlaytest.steps(t, WALL);
         minePlane(t, WALL, Direction.NORTH, "wall");
@@ -271,7 +272,7 @@ public final class HammerPlaytest {
     }
 
     private static Button configButton(Minecraft mc, String setting) {
-        return button(mc, Component.translatable("gui.florafauna.tool_config." + setting));
+        return button(mc, Component.translatable("gui.hammer.tool_config." + setting));
     }
 
     static Button button(Minecraft mc, Component label) {

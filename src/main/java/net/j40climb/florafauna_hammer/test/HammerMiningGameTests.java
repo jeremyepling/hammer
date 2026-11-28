@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.Set;
 
 final class HammerMiningGameTests {
-    private static final Identifier MINE = Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "test_hammer_mine");
+    private static final Identifier MINE = Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "test_hammer_mine");
 
     static void register(HammerGameTests.Registrar tests) {
         for (MiningShape mode : MiningShape.values()) {
@@ -190,6 +190,14 @@ final class HammerMiningGameTests {
                                 tread = tread.relative(travel).above(up ? 1 : -1);
                             }
                         }
+                    }
+                }
+                if (mode == MiningShape.FLAT_3X3) {
+                    var preview = MultiBlockPatterns.plan(player, player.getMainHandItem(), center, face);
+                    h.assertTrue(preview.blocks().size() == 9 && Set.copyOf(preview.blocks()).equals(expected.keySet()),
+                            "3×3 hovering planned the wrong blocks for " + face + ": " + preview.blocks());
+                    for (BlockPos pos : preview.blocks()) {
+                        check(h, pos, Blocks.STONE, "Preparing the outline changed a block");
                     }
                 }
                 swing(player, center, face, heading);

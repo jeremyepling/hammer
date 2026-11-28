@@ -33,7 +33,7 @@ import net.minecraft.world.phys.AABB;
 
 final class ChargedHammerGameTests {
     static void register(HammerGameTests.Registrar tests) {
-        var mine = Identifier.fromNamespaceAndPath(HammerMod.CONTENT_NAMESPACE, "test_hammer_mine");
+        var mine = Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "test_hammer_mine");
         HammerGameTests.registerStructureTest(tests, "hammer_charged_ore_rules", mine, 100, ChargedHammerGameTests::oreRules);
         HammerGameTests.registerStructureTest(tests, "hammer_charged_first_surface", mine, 100, ChargedHammerGameTests::firstSurface);
         HammerGameTests.registerStructureTest(tests, "hammer_charged_permissions", mine, 100, ChargedHammerGameTests::permissions);

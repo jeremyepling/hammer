@@ -174,7 +174,7 @@ public class RightClickActionHandler {
             return false;
         }
 
-        if (!action.abilityId().getNamespace().equals(HammerMod.CONTENT_NAMESPACE)) return false;
+        if (!action.abilityId().getNamespace().equals(HammerMod.MOD_ID)) return false;
         String abilityName = action.abilityId().getPath();
         switch (abilityName) {
             case "throwable_ability" -> {

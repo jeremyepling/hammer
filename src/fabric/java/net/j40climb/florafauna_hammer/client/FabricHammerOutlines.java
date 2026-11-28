@@ -16,6 +16,7 @@ public final class FabricHammerOutlines {
     public static void register() {
         //? if <26.4 {
         RenderPipelines.register(MultiBlockOutlineRenderer.PREVIEW_PIPELINE);
+        MultiBlockOutlineRenderer.registerIrisPreviewPipeline();
         //?}
         LevelRenderEvents.AFTER_BLOCK_OUTLINE_EXTRACTION.register((context, hit) -> {
             var state = context.levelState();

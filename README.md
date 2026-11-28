@@ -1,6 +1,6 @@
 # Hammer
 
-Hammer supports Minecraft 26.1 and 26.3 on Fabric and NeoForge, plus Minecraft 26.4 Pre-Release 2 on Fabric. Build and run it with Java 25. Install the Hammer jar for your Minecraft version and loader on the server and client. Fabric installations also need Fabric API. Find the Hammer in Tools & Utilities or use `/give @s florafauna:hammer`. Existing Hammer items, ability components and projectiles keep their original identifiers. The split FloraFauna mod (0.0.2 or later) is optional.
+Hammer supports Minecraft 26.1 and 26.3 on Fabric and NeoForge, plus Minecraft 26.4 Pre-Release 2 on Fabric. Build and run it with Java 25. Install the Hammer jar for your Minecraft version and loader on the server and client. Fabric installations also need Fabric API. Find the Hammer in Tools & Utilities or use `/give @s hammer:hammer`. Hammer items, ability components and projectiles use the `hammer` namespace. Saves from older releases reference different IDs, so back up those worlds before updating. The split FloraFauna mod (0.0.2 or later) is optional.
 
 ## Build and test
 
@@ -14,7 +14,7 @@ Stonecutter builds the four stable targets and the Fabric preview from this chec
 ./gradlew :26.3-neoforge:build :26.3-neoforge:runGameTestServer
 ```
 
-Use `gradlew.bat` on Windows. Pick the matching jar from `versions/<minecraft>-<loader>/build/libs/` for the Minecraft version you play. To run a single server test, pass `-PgameTestFilter=florafauna_hammer:hammer_tunnel_gaps` to the version's GameTest task.
+Use `gradlew.bat` on Windows. Pick the matching jar from `versions/<minecraft>-<loader>/build/libs/` for the Minecraft version you play. To run a single server test, pass `-PgameTestFilter=hammer:hammer_tunnel_gaps` to the version's GameTest task.
 
 The `26.4-fabric` target pins Minecraft `26.4-pre-2`, Fabric Loader `0.20.1` and Fabric API `0.167.1+26.4`. Use `-Target 26.4 -Loader fabric` for client checks on a copy of a Pre-Release 2 save.
 
@@ -120,8 +120,9 @@ In **Abilities**, select Auto, Strip, Path, Till, Throw, Lightning, Surface Tele
 Use the [client runner](#build-and-test) with the indicated `-Scenario`, target, loader and a closed save for that Minecraft version.
 
 - **Choose both wheels in one hold** (`-Scenario radial`). With Seismic Scan unlocked, hold **C**, click Walkable Tunnel on the left, click Seismic Scan on the right, hover over Throw, then release. The wheels close and the held Hammer keeps Walkable and Scan on the server. The scripted client remaps **C** to **V** and also checks the reverse click order and a hover-only release.
+- **Preview all nine blocks before a swing** (`-Scenario hammer`, GameTest `hammer:hammer_flat_3x3_all_faces`). Select 3×3 and aim at the center of a stone wall. The scripted client checks violet lines on the eight neighboring outlines and along the seams around the targeted block before mining. The headless test checks the nine planned positions and the eventual cut for every face.
 - **Match the descending stair preview across air** (`-Scenario stair-outline`). Start mining the wall face, then aim at the top of the same block during the swing. The client preview must retain the five original wall-facing tread positions across the gap. The server must place a north-facing cobblestone stair at each previewed position. To check the visible teal outline through rock, use `-Scenario hammer`. Its quarry also checks the five treads, cleared headroom and intact stone around the cut.
-- **Cut across a two-column cave** (GameTest `florafauna_hammer:hammer_tunnel_gaps`). Strike the wall in ascending and descending stair modes. The swing bridges the two empty columns, preserves bedrock in its path and ends at the fifth column. This headless case checks the resulting blocks. Use the client checks above for the preview.
+- **Cut across a two-column cave** (GameTest `hammer:hammer_tunnel_gaps`). Strike the wall in ascending and descending stair modes. The swing bridges the two empty columns, preserves bedrock in its path and ends at the fifth column. This headless case checks the resulting blocks. Use the client checks above for the preview.
 
 ## Seismic Scan
 
@@ -152,7 +153,7 @@ Straight cuts advance into the face you strike. On a wall, strike the bottom of 
 
 Stair modes cut five columns with five blocks of clearance per column before placing the tread. A side hit builds ascending stairs from one block below the center, or descending stairs from two below. A floor hit in descending mode follows the player's horizontal heading. Ceiling hits and ascending floor hits mine just the center. Teal stair outlines show planned placements through rock and across air gaps before you strike.
 
-Orange outlines mark the faces of planned mining blocks that touch source or flowing lava. Check the marked side, ceiling, floor or end wall before striking. Selecting Single Block narrows this warning to the targeted block. The mining preview shows the selected mode and planned block count. The warning leaves the final decision to the player.
+Violet outlines show the additional blocks the Hammer will break. Orange outlines mark the faces of planned mining blocks that touch source or flowing lava. Check the marked side, ceiling, floor or end wall before striking. Selecting Single Block narrows this warning to the targeted block. The warning leaves the final decision to the player.
 
 Shapeless mode groups matching stone and deepslate ore variants. An iron vein can cross the stone–deepslate boundary. Copper touching that vein stays in place. Select **Exact block** in the Hammer settings to stop at the variant boundary.
 
@@ -174,10 +175,10 @@ In Auto, the `RIGHT_CLICK_ACTION` component configures the fallback after block 
 
 | Ability ID | Effect |
 |------------|--------|
-| `florafauna:throwable_ability` | Throw the item as a projectile |
-| `florafauna:multi_block_mining` | Cycle mining mode |
-| `florafauna:lightning_ability` | Spawn lightning at target block |
-| `florafauna:teleport_surface_ability` | Teleport to surface |
+| `hammer:throwable_ability` | Throw the item as a projectile |
+| `hammer:multi_block_mining` | Cycle mining mode |
+| `hammer:lightning_ability` | Spawn lightning at target block |
+| `hammer:teleport_surface_ability` | Teleport to surface |
 
 ## Multi-Tool Ability
 
@@ -201,7 +202,7 @@ ItemStack stack = new ItemStack(myItem);
 stack.set(HammerRegistry.MULTI_BLOCK_MINING.get(), MiningModeData.DEFAULT);
 stack.set(HammerRegistry.TOOL_CONFIG.get(), ToolConfig.DEFAULT);
 stack.set(HammerRegistry.LIGHTNING_ABILITY.get(), Unit.INSTANCE);
-stack.set(HammerRegistry.RIGHT_CLICK_ACTION.get(), new RightClickAction(Identifier.fromNamespaceAndPath("florafauna", "throwable_ability")));
+stack.set(HammerRegistry.RIGHT_CLICK_ACTION.get(), new RightClickAction(Identifier.fromNamespaceAndPath("hammer", "throwable_ability")));
 stack.set(HammerRegistry.MULTI_TOOL_ABILITY.get(), MultiToolAbilityData.DEFAULT);
 ```
 
