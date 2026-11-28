@@ -12,6 +12,7 @@ import net.j40climb.florafauna_hammer.common.item.hammer.HammerItem;
 import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -25,12 +26,14 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
 
 
 final class ChargedHammerGameTests {
@@ -42,6 +45,7 @@ final class ChargedHammerGameTests {
         HammerGameTests.registerStructureTest(tests, "hammer_charged_survival_reload", mine, 100, h -> flight(h, false));
         HammerGameTests.registerStructureTest(tests, "hammer_charged_creative_reload", mine, 100, h -> flight(h, true));
         HammerGameTests.registerStructureTest(tests, "hammer_charged_tap_and_recharge", mine, 100, ChargedHammerGameTests::tap);
+        HammerGameTests.registerStructureTest(tests, "hammer_charged_right_click_ore", mine, 100, ChargedHammerGameTests::rightClickOre);
     }
 
     private static ServerPlayer player(GameTestHelper h, boolean creative) {
@@ -249,6 +253,7 @@ final class ChargedHammerGameTests {
         var center = h.absolutePos(new BlockPos(8, 12, 8));
         rock(p, center, Blocks.DIAMOND_ORE);
         p.setPos(Vec3.atCenterOf(center.north(4)));
+        p.setOnGround(true);
         var hammer = p.getMainHandItem();
         hammer.set(HammerRegistry.HAMMER_CHARGE.get(), 40);
         for (int tick = 1; tick <= 20; tick++) {
@@ -257,18 +262,63 @@ final class ChargedHammerGameTests {
             hammer.getItem().inventoryTick(hammer, p.level(), p, null);
         }
         h.assertTrue(HammerItem.charge(hammer) == 41, "Held recharge must add one per second");
-        ChargedThrowPayload.key(p, ChargedThrowPayload.PRESS);
+        h.assertTrue(TestPlatform.clickAir(p, InteractionHand.MAIN_HAND) && HammerRegistry.throwHold(p) != null,
+                "Grounded Auto in air must start a throw hold");
         p.setItemInHand(InteractionHand.MAIN_HAND, HammerStage.RESONANT.createStack());
         ChargedThrowPayload.key(p, ChargedThrowPayload.RELEASE);
-        h.assertTrue(!p.getMainHandItem().isEmpty(), "Switching Hammers must cancel the windup");
+        h.assertTrue(!p.getMainHandItem().isEmpty() && HammerRegistry.throwHold(p) == null
+                        && p.level().getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == p).isEmpty(),
+                "Switching Hammers must cancel the windup without launching");
         p.setItemInHand(InteractionHand.MAIN_HAND, hammer);
-        ChargedThrowPayload.key(p, ChargedThrowPayload.PRESS);
+        h.assertTrue(TestPlatform.clickAir(p, InteractionHand.MAIN_HAND) && p.getMainHandItem() == hammer,
+                "Quick right-click must keep the Hammer until release");
         ChargedThrowPayload.key(p, ChargedThrowPayload.RELEASE);
-        var thrown = p.level().getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == p).getFirst();
+        ChargedThrowPayload.key(p, ChargedThrowPayload.RELEASE);
+        var projectiles = p.level().getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == p);
+        h.assertTrue(projectiles.size() == 1 && p.getMainHandItem().isEmpty(), "A quick release must launch exactly one Hammer");
+        var thrown = projectiles.getFirst();
         thrown.setPos(Vec3.atCenterOf(center.north(2)));
         thrown.setDeltaMovement(0, 0, 2.5);
         thrown.tick();
         h.assertTrue(!p.level().isEmptyBlock(center) && HammerItem.charge(thrown.getThrownItem()) == 41, "A tap must be a normal throw");
         h.succeed();
+    }
+
+    private static void rightClickOre(GameTestHelper h) {
+        var p = player(h, false);
+        var center = h.absolutePos(new BlockPos(8, 12, 8));
+        rock(p, center, Blocks.DIAMOND_ORE);
+        rock(p, center.east(), Blocks.DIAMOND_ORE);
+        p.setPos(Vec3.atCenterOf(center.north(4)));
+        p.setOnGround(true);
+        var hammer = p.getMainHandItem();
+        var hit = new BlockHitResult(Vec3.atCenterOf(center), Direction.NORTH, center, false);
+        var use = new UseOnContext(p, InteractionHand.MAIN_HAND, hit);
+        h.assertTrue(!TestPlatform.clickBlock(p, InteractionHand.MAIN_HAND, hit)
+                        && hammer.useOn(use).consumesAction(),
+                "Auto must start a hold after ordinary ore passes block use");
+        var hold = HammerRegistry.throwHold(p);
+        h.assertTrue(hold != null && p.getMainHandItem() == hammer, "Right-click must start a hold with the same Hammer");
+        h.runAfterDelay(ChargedThrowPayload.HOLD_TICKS - 1, () -> {
+            h.assertTrue(p.getMainHandItem() == hammer
+                            && p.level().getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == p).isEmpty(),
+                    "The Hammer left the player's hand during the hold");
+            p.setOnGround(true);
+            hammer.useOn(use);
+            h.assertTrue(HammerRegistry.throwHold(p) == hold, "Repeated use restarted the hold");
+        });
+        h.runAfterDelay(ChargedThrowPayload.HOLD_TICKS + 1, () -> {
+            ChargedThrowPayload.key(p, ChargedThrowPayload.RELEASE);
+            var projectiles = p.level().getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == p);
+            h.assertTrue(projectiles.size() == 1 && p.getMainHandItem().isEmpty(), "Powered right-click release must launch exactly one Hammer");
+            var thrown = projectiles.getFirst();
+            thrown.setPos(Vec3.atCenterOf(center.north(2)));
+            thrown.setDeltaMovement(0, 0, 2.5);
+            thrown.tick();
+            h.assertTrue(p.level().isEmptyBlock(center) && p.level().isEmptyBlock(center.east())
+                            && HammerItem.charge(thrown.getThrownItem()) == HammerStage.RESONANT.capacity() - 2,
+                    "Powered right-click throw must mine both ore blocks and spend two charge");
+            h.succeed();
+        });
     }
 }

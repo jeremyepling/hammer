@@ -68,6 +68,7 @@ public final class Playtest {
         else if ("progression".equals(scenario)) HammerProgressionPlaytest.steps(this, phase);
         else if ("radial".equals(scenario)) HammerRadialPlaytest.steps(this);
         else if ("powers".equals(scenario)) HammerPowerPlaytest.steps(this);
+        else if ("throw-input".equals(scenario)) ChargedHammerPlaytest.rightClickSteps(this);
         else HammerPlaytest.steps(this, phase);
         deadline = System.nanoTime() + Duration.ofSeconds(90).toNanos();
     }

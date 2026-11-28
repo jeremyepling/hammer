@@ -9,6 +9,7 @@ import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningSpeed;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.ThrowableAbilityData;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.ToolConfig;
+import net.j40climb.florafauna_hammer.common.item.abilities.networking.ChargedThrowPayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.ThrowItemPayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.UpdateToolConfigPayload;
 import net.j40climb.florafauna_hammer.common.item.projectile.ThrownItemEntity;
@@ -131,6 +132,11 @@ final class HammerAbilityGameTests {
             helper.assertTrue(level.getBlockState(neighbor).is(expected), "Wrong 3×3 neighbor effect for " + mode);
             helper.assertTrue(level.getBlockState(outside).is(original), mode + " changed an eligible block outside the 3×3");
             if (mode == HammerAction.THROW) {
+                helper.assertTrue(hammer == player.getMainHandItem()
+                                && HammerRegistry.throwHold(player) != null
+                                && level.getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == player).isEmpty(),
+                        "Grounded Throw must keep the Hammer in hand until release");
+                ChargedThrowPayload.key(player, ChargedThrowPayload.RELEASE);
                 var thrown = helper.getLevel().getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == player);
                 helper.assertTrue(hammer.isEmpty() && thrown.size() == 1 &&
                         thrown.getFirst().getThrownItem().get(HammerRegistry.HAMMER_ACTION.get()) == mode, "Throw lost the selected action or the tool");
@@ -281,6 +287,7 @@ final class HammerAbilityGameTests {
     private static ThrownItemEntity beginRecoveryThrow(GameTestHelper helper, ServerPlayer player, ItemStack expected) {
         player.setItemInHand(InteractionHand.MAIN_HAND, expected.copy());
         helper.assertTrue(TestPlatform.clickAir(player, InteractionHand.MAIN_HAND), "Throw was not accepted");
+        ChargedThrowPayload.key(player, ChargedThrowPayload.RELEASE);
         var entities = helper.getLevel().getEntities(HammerRegistry.THROWN_ITEM.get(), projectile -> projectile.getOwner() == player);
         helper.assertTrue(entities.size() == 1 && player.getMainHandItem().isEmpty(), "Expected one Hammer in flight");
         var entity = entities.getFirst();
@@ -310,6 +317,7 @@ final class HammerAbilityGameTests {
         level.setBlockAndUpdate(target, Blocks.STONE.defaultBlockState());
         try {
             helper.assertTrue(TestPlatform.clickAir(player, InteractionHand.MAIN_HAND), "Throw action was not accepted");
+            ChargedThrowPayload.key(player, ChargedThrowPayload.RELEASE);
             var projectiles = level.getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == player);
             helper.assertTrue(projectiles.size() == 1 && player.getMainHandItem().isEmpty(), "Expected one Hammer in flight");
             var projectile = projectiles.getFirst();
@@ -373,6 +381,7 @@ final class HammerAbilityGameTests {
         UpdateToolConfigPayload.applyToHeldItem(player, new ToolConfig(false, true, MiningSpeed.STANDARD));
         var expected = hammer.copy();
         helper.assertTrue(TestPlatform.clickAir(player, InteractionHand.MAIN_HAND), "Throw action was not accepted");
+        ChargedThrowPayload.key(player, ChargedThrowPayload.RELEASE);
         var projectiles = level.getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == player);
         helper.assertTrue(projectiles.size() == 1 && player.getMainHandItem().isEmpty(), "Expected one Hammer in flight");
         var projectile = projectiles.getFirst();

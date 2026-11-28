@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)] [string]$SourceWorld,
-    [ValidateSet('hammer','stair-outline','powers','radial','progression')][string]$Scenario = 'hammer',
+    [ValidateSet('hammer','stair-outline','powers','radial','progression','throw-input')][string]$Scenario = 'hammer',
     [switch]$Offline,
     [ValidateSet('26.1','26.3')][string]$Target = '26.1',
     [ValidateSet('neoforge','fabric')][string]$Loader = 'neoforge'
