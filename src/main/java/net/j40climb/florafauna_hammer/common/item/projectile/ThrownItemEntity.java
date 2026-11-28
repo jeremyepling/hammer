@@ -68,7 +68,8 @@ public class ThrownItemEntity extends AbstractArrow {
 
     public ThrownItemEntity(Level level, LivingEntity shooter, ItemStack thrownItem, ThrowableAbilityData abilityData) {
         super(HammerRegistry.THROWN_ITEM.get(), shooter, level, thrownItem.copyWithCount(1), null);
-        this.startPos = shooter.position();
+        this.setPos(shooter.getEyePosition());
+        this.startPos = position();
 
         // Set entity data from ability config
         this.entityData.set(DATA_ITEM, getPickupItem());
@@ -114,7 +115,7 @@ public class ThrownItemEntity extends AbstractArrow {
         float returnSpeed = getReturnSpeed();
 
         // Check if we should start returning (exceeded max range)
-        if (autoReturn && !returning && startPos != null && startPos.distanceTo(position()) >= maxRange) {
+        if (level() instanceof ServerLevel && autoReturn && !returning && startPos != null && startPos.distanceTo(position()) >= maxRange) {
             returning = true;
         }
 
@@ -129,8 +130,7 @@ public class ThrownItemEntity extends AbstractArrow {
 
             setNoPhysics(true);
             Vec3 toOwner = owner.getEyePosition().subtract(position());
-            setPosRaw(getX(), getY() + toOwner.y * 0.015 * returnSpeed, getZ());
-            setDeltaMovement(getDeltaMovement().scale(0.95).add(toOwner.normalize().scale(0.05 * returnSpeed)));
+            setDeltaMovement(toOwner.normalize().scale(Math.min(returnSpeed, toOwner.length())));
             if (clientSideReturnTickCount++ == 0) {
                 playSound(SoundEvents.TRIDENT_RETURN, 10.0F, 1.0F);
             }
@@ -153,6 +153,16 @@ public class ThrownItemEntity extends AbstractArrow {
         }
 
         super.tick();
+    }
+
+    @Override
+    protected double getDefaultGravity() {
+        return 0.0;
+    }
+
+    @Override
+    protected float getWaterInertia() {
+        return 1.0f;
     }
 
     private boolean isAcceptableReturnOwner(@Nullable Entity owner) {
@@ -223,8 +233,10 @@ public class ThrownItemEntity extends AbstractArrow {
             returning = true;
         }
 
-        // Call super for normal arrow ground behavior (sticks in ground)
         super.onHitBlock(result);
+        // Vanilla backs embedded arrows off each axis independently. Start the
+        // return at the actual hit point, including for diagonal throws.
+        if (autoReturn) setPos(result.getLocation());
         this.playSound(getDefaultHitGroundSoundEvent(), 1.0f, 1.2f / (this.random.nextFloat() * 0.2f + 0.9f));
     }
 
