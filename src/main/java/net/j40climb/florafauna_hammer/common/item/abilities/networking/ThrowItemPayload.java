@@ -15,6 +15,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 
 /**
  * Payload sent from client to server when the throw key is pressed.
@@ -90,7 +91,7 @@ public record ThrowItemPayload(boolean mainHand) implements CustomPacketPayload 
                 SoundEvents.TRIDENT_THROW, SoundSource.PLAYERS, 1.0f, 1.0f);
 
         // Remove item from hand (will return via entity or pickup)
-        if (charged || !player.getAbilities().instabuild) {
+        if (entity.pickup == AbstractArrow.Pickup.ALLOWED) {
             stack.shrink(1);
         }
     }

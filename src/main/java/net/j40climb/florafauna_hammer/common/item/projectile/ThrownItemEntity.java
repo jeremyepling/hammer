@@ -30,6 +30,9 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * A throwable item entity that can be configured to either return like a trident with loyalty
  * or stay in place like an arrow for manual pickup.
@@ -52,6 +55,8 @@ public class ThrownItemEntity extends AbstractArrow {
 
     private static final int RECOVERY_RETRY_TICKS = 20;
     private int recoveryRetryTicks;
+    private final List<ItemStack> minedDrops = new ArrayList<>();
+    private boolean toolDelivered;
 
     // State tracking
     private boolean oreStrike;
@@ -79,7 +84,8 @@ public class ThrownItemEntity extends AbstractArrow {
         this.entityData.set(DATA_RETURN_SPEED, abilityData.returnSpeed());
 
         // Vanilla persists the pickup policy, including creative throws that never consumed an item.
-        this.pickup = shooter instanceof Player player && player.hasInfiniteMaterials()
+        boolean miningHammer = abilityData.breakBlocks() && thrownItem.is(HammerRegistry.HAMMER.get());
+        this.pickup = !miningHammer && shooter instanceof Player player && player.hasInfiniteMaterials()
                 ? Pickup.CREATIVE_ONLY : Pickup.ALLOWED;
     }
 
@@ -152,34 +158,56 @@ public class ThrownItemEntity extends AbstractArrow {
         setDeltaMovement(Vec3.ZERO);
         if (recoveryRetryTicks > 0) return;
 
-        // The projectile owns one item until either its slot or its drop accepts it.
-        ItemStack stack = getThrownItem().copy();
-        boolean accepted;
-        if (player != null) {
-            accepted = returnToPlayer(level, player, stack);
-        } else {
-            ItemEntity drop = new ItemEntity(level, getX(), getY(), getZ(), stack);
-            drop.setDefaultPickUpDelay();
-            accepted = level.addFreshEntity(drop);
+        if (!toolDelivered) {
+            ItemStack tool = getThrownItem().copy();
+            toolDelivered = player != null ? returnToPlayer(level, player, tool) : dropAt(level, position(), tool);
+            if (toolDelivered) entityData.set(DATA_ITEM, ItemStack.EMPTY);
         }
-        if (accepted) {
-            discard();
-        } else {
-            recoveryRetryTicks = RECOVERY_RETRY_TICKS;
+        if (toolDelivered) {
+            var iterator = minedDrops.iterator();
+            while (iterator.hasNext()) {
+                ItemStack stack = iterator.next();
+                if (player != null) insertIntoInventory(player, stack);
+                if (!stack.isEmpty() && !dropAt(level, player != null ? player.position() : position(), stack.copy())) break;
+                iterator.remove();
+            }
+            if (minedDrops.isEmpty()) {
+                discard();
+                return;
+            }
+        }
+        recoveryRetryTicks = RECOVERY_RETRY_TICKS;
+    }
+
+    private static boolean dropAt(ServerLevel level, Vec3 position, ItemStack stack) {
+        ItemEntity drop = new ItemEntity(level, position.x, position.y, position.z, stack);
+        drop.setDefaultPickUpDelay();
+        return level.addFreshEntity(drop);
+    }
+
+    private static void insertIntoInventory(Player player, ItemStack stack) {
+        var inventory = player.getInventory();
+        while (!stack.isEmpty()) {
+            int slot = inventory.getSlotWithRemainingSpace(stack);
+            if (slot < 0) slot = inventory.getFreeSlot();
+            if (slot < 0) break;
+            int space = inventory.getMaxStackSize(stack) - inventory.getItem(slot).getCount();
+            int count = Math.min(space, stack.getCount());
+            if (count <= 0) break;
+            ItemStack portion = stack.copyWithCount(count);
+            inventory.add(slot, portion);
+            int accepted = count - portion.getCount();
+            if (accepted <= 0) break;
+            stack.shrink(accepted);
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.connection.send(inventory.createInventoryUpdatePacket(slot));
+            }
         }
     }
 
     private static boolean returnToPlayer(ServerLevel level, Player player, ItemStack stack) {
-        var inventory = player.getInventory();
-        int slot = inventory.getSlotWithRemainingSpace(stack);
-        if (slot < 0) slot = inventory.getFreeSlot();
-        if (slot >= 0) {
-            if (!inventory.add(slot, stack)) return false;
-            if (player instanceof ServerPlayer serverPlayer) {
-                serverPlayer.connection.send(inventory.createInventoryUpdatePacket(slot));
-            }
-            return true;
-        }
+        insertIntoInventory(player, stack);
+        if (stack.isEmpty()) return true;
 
         // The toss hook may cancel, or entity admission may reject the returned entity.
         //? if <26.3 {
@@ -249,7 +277,7 @@ public class ThrownItemEntity extends AbstractArrow {
             oreStrike = false;
             if (!returning && !dealtDamage && getOwner() instanceof ServerPlayer owner && owner.level() == level()) {
                 ItemStack tool = getPickupItem();
-                RemoteOreStrike.hit(owner, tool, result.getBlockPos());
+                RemoteOreStrike.hit(owner, tool, result.getBlockPos(), minedDrops);
                 setPickupItemStack(tool);
             }
             returning = true;
@@ -259,7 +287,10 @@ public class ThrownItemEntity extends AbstractArrow {
         }
         if (breakBlocks && level() instanceof ServerLevel level && getOwner() instanceof ServerPlayer owner) {
             ItemStack tool = getPickupItem();
-            boolean brokeBlock = RemoteOreStrike.breakThrownBlock(level, owner, tool, result.getBlockPos());
+            // Older Creative saves may carry a copy of a configured Hammer instead of the owner's actual item.
+            boolean copiedHammer = pickup == Pickup.CREATIVE_ONLY && tool.is(HammerRegistry.HAMMER.get());
+            boolean brokeBlock = !copiedHammer && RemoteOreStrike.breakThrownBlock(level, owner, tool,
+                    result.getBlockPos(), autoReturn ? minedDrops : null);
             if (tool.isEmpty()) {
                 discard();
                 return;
@@ -315,6 +346,10 @@ public class ThrownItemEntity extends AbstractArrow {
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
         super.readAdditionalSaveData(input);
+        minedDrops.clear();
+        input.listOrEmpty("MinedDrops", ItemStack.CODEC).forEach(minedDrops::add);
+        toolDelivered = input.getBooleanOr("ToolDelivered", false);
+        if (toolDelivered) entityData.set(DATA_ITEM, ItemStack.EMPTY);
         oreStrike = input.getBooleanOr("OreStrike", false);
         this.dealtDamage = input.getBooleanOr("DealtDamage", false);
         this.returning = input.getBooleanOr("Returning", false);
@@ -336,6 +371,11 @@ public class ThrownItemEntity extends AbstractArrow {
     @Override
     protected void addAdditionalSaveData(ValueOutput output) {
         super.addAdditionalSaveData(output);
+        if (!minedDrops.isEmpty()) {
+            var drops = output.list("MinedDrops", ItemStack.CODEC);
+            minedDrops.forEach(drops::add);
+        }
+        output.putBoolean("ToolDelivered", toolDelivered);
         output.putBoolean("OreStrike", oreStrike);
         output.putBoolean("DealtDamage", this.dealtDamage);
         output.putBoolean("Returning", this.returning);

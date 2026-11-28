@@ -10,12 +10,15 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+
+import java.util.List;
 import net.j40climb.florafauna_hammer.common.item.abilities.OreTags;
 import org.jspecify.annotations.Nullable;
 
 /** A synchronous player break sees the projectile's tool without moving or replacing any inventory slot. */
 public final class RemoteOreStrike {
-    private record Strike(ServerPlayer owner, ItemStack hammer) {}
+    private record Strike(ServerPlayer owner, ItemStack hammer, BlockPos pos, @Nullable List<ItemStack> drops) {}
     private static final ThreadLocal<Strike> ACTIVE = new ThreadLocal<>();
 
     private RemoteOreStrike() {}
@@ -25,7 +28,19 @@ public final class RemoteOreStrike {
         return strike != null && strike.owner == entity ? strike.hammer : null;
     }
 
-    public static boolean breakThrownBlock(ServerLevel level, ServerPlayer owner, ItemStack tool, BlockPos pos) {
+    /** Called only for newly generated block loot, after the loader's drop rules. */
+    public static boolean collectDrop(Level level, BlockPos pos, ItemStack stack) {
+        Strike strike = ACTIVE.get();
+        if (strike == null || strike.drops == null || strike.owner.level() != level || !strike.pos.equals(pos)) return false;
+        if (!stack.isEmpty()) strike.drops.add(stack.copy());
+        return true;
+    }
+
+    public static boolean breakThrownBlock(ServerLevel level, ServerPlayer owner, ItemStack tool, BlockPos pos,
+                                           @Nullable List<ItemStack> drops) {
+        boolean hammer = tool.is(HammerRegistry.HAMMER.get());
+        int charge = hammer ? HammerItem.charge(tool) : 0;
+        if (hammer && charge == 0) return false;
         if (owner.level() != level || !owner.isAlive() || owner.isSpectator() || tool.isEmpty()
                 || !MultiBlockPatterns.canInteract(level, owner, pos)
                 || owner.blockActionRestricted(level, pos, owner.gameMode.getGameModeForPlayer())) return false;
@@ -34,11 +49,13 @@ public final class RemoteOreStrike {
         if (before.isAir() || before.getDestroySpeed(level, pos) < 0) return false;
 
         var previous = ACTIVE.get();
-        ACTIVE.set(new Strike(owner, tool));
+        ACTIVE.set(new Strike(owner, tool, pos, hammer ? drops : null));
         try {
             // The player break invokes the loader's protection and harvest hooks.
             // A reported success can still leave the original block in place.
-            return owner.gameMode.destroyBlock(pos) && !level.getBlockState(pos).is(before.getBlock());
+            boolean removed = owner.gameMode.destroyBlock(pos) && !level.getBlockState(pos).is(before.getBlock());
+            if (removed && hammer) tool.set(HammerRegistry.HAMMER_CHARGE.get(), charge - 1);
+            return removed;
         } finally {
             if (previous == null) ACTIVE.remove();
             else ACTIVE.set(previous);
@@ -46,6 +63,10 @@ public final class RemoteOreStrike {
     }
 
     public static void hit(ServerPlayer owner, ItemStack hammer, BlockPos origin) {
+        hit(owner, hammer, origin, null);
+    }
+
+    public static void hit(ServerPlayer owner, ItemStack hammer, BlockPos origin, @Nullable List<ItemStack> drops) {
         var level = owner.level();
         int charge = HammerItem.charge(hammer);
         if (!owner.isAlive() || owner.isSpectator() || !hammer.is(HammerRegistry.HAMMER.get()) || HammerStage.of(hammer) == HammerStage.FORGED || charge == 0
@@ -62,10 +83,9 @@ public final class RemoteOreStrike {
             var before = level.getBlockState(pos);
             boolean mined = matches.test(before) && before.is(OreTags.ORES)
                     && MultiBlockPatterns.isMineable(level, owner, hammer, vein, pos)
-                    && breakThrownBlock(level, owner, hammer, pos);
+                    && breakThrownBlock(level, owner, hammer, pos, drops);
             if (mined) {
-                hammer.set(HammerRegistry.HAMMER_CHARGE.get(), --charge);
-                if (charge == 0) break;
+                if (HammerItem.charge(hammer) == 0) break;
             } else if (pos.equals(origin)) {
                 break;
             }
