@@ -23,11 +23,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.GameMasterBlock;
-import net.minecraft.world.level.block.state.BlockState;
-//? if neoforge {
-import net.neoforged.neoforge.common.CommonHooks;
-//?}
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.BlockHitResult;
@@ -262,9 +257,11 @@ public class ThrownItemEntity extends AbstractArrow {
             setNoPhysics(true);
             return;
         }
-        if (breakBlocks && level() instanceof ServerLevel level && getOwner() instanceof ServerPlayer owner
-                && breakImpactBlock(level, owner, result.getBlockPos())) {
-            return;
+        if (breakBlocks && level() instanceof ServerLevel level && getOwner() instanceof ServerPlayer owner) {
+            ItemStack tool = getPickupItem();
+            boolean brokeBlock = RemoteOreStrike.breakThrownBlock(level, owner, tool, result.getBlockPos());
+            setPickupItemStack(tool);
+            if (brokeBlock) return;
         }
 
         if (autoReturn) {
@@ -278,31 +275,6 @@ public class ThrownItemEntity extends AbstractArrow {
         // return at the actual hit point, including for diagonal throws.
         if (autoReturn) setPos(result.getLocation());
         this.playSound(getDefaultHitGroundSoundEvent(), 1.0f, 1.2f / (this.random.nextFloat() * 0.2f + 0.9f));
-    }
-
-    private boolean breakImpactBlock(ServerLevel level, ServerPlayer owner, BlockPos pos) {
-        //? if neoforge {
-        BlockState state = level.getBlockState(pos);
-        ItemStack tool = getThrownItem();
-        if (state.isAir() || state.getDestroySpeed(level, pos) < 0 || !level.mayInteract(owner, pos)
-                || owner.blockActionRestricted(level, pos, owner.gameMode.getGameModeForPlayer())
-                || (state.getBlock() instanceof GameMasterBlock && !owner.canUseGameMasterBlocks())
-                || !tool.canDestroyBlock(state, level, pos, owner)
-                || CommonHooks.fireBlockBreak(level, owner.gameMode.getGameModeForPlayer(), owner, pos, state).isCanceled()) {
-            return false;
-        }
-        var block = state.getBlock();
-        var blockEntity = level.getBlockEntity(pos);
-        boolean harvest = !owner.preventsBlockDrops()
-                && (!state.requiresCorrectToolForDrops() || tool.isCorrectToolForDrops(state));
-        BlockState adjusted = block.playerWillDestroy(level, pos, state, owner);
-        if (!adjusted.onDestroyedByPlayer(level, pos, owner, tool, harvest, level.getFluidState(pos))) return false;
-        block.destroy(level, pos, adjusted);
-        if (harvest) block.playerDestroy(level, owner, pos, adjusted, blockEntity, tool);
-        return true;
-        //?} else {
-        /*return RemoteOreStrike.breakImpactBlock(owner, getThrownItem(), pos);
-        *///?}
     }
 
     @Override
