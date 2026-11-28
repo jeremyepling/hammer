@@ -18,7 +18,9 @@ Use `gradlew.bat` on Windows. Pick the matching jar from `versions/<minecraft>-<
 
 The `26.4-fabric` target pins Minecraft `26.4-pre-2`, Fabric Loader `0.20.1` and Fabric API `0.167.1+26.4`. Use `-Target 26.4 -Loader fabric` for client checks on a copy of a Pre-Release 2 save.
 
-The experimental `26.4-neoforge` target requires a working NeoForge userdev artifact for Minecraft `26.4-snapshot-10`. Once a matching version is available on NeoForge Maven or in Maven Local, run `./gradlew -PpreviewNeoVersion=<version> :26.4-neoforge:build`. The upstream snapshot-10 port failed to compile at [e9012cb](https://github.com/neoforged/NeoForge/commit/e9012cb09aea9261144cdf41d62b5a63f1e5f5dd).
+The experimental `26.4-neoforge` target requires a NeoForge userdev artifact for Minecraft `26.4-snapshot-10`. On November 28, 2026, NeoForge Maven had no matching loader. Upstream setup completed at `1c14d83`, but Java compilation failed on NeoForge’s fluid API types. [Upstream port](https://github.com/neoforged/NeoForge/commit/1c14d8301132d6e4fe291e50c3262b718a0a5c63)
+
+Once a matching version is available on NeoForge Maven or in Maven Local, run `./gradlew -PpreviewNeoVersion=<version> :26.4-neoforge:build`.
 
 For client checks, run `./scripts/test_hammer.ps1 -Target 26.1 -SourceWorld <closed-save-directory>` in PowerShell 7. Add `-Loader fabric` to run against Fabric. Choose a save from the same Minecraft version. The runner supports the quarry and stair-outline scenarios. You can also select `-Scenario powers`, `radial`, or `progression`. Disposable saves, screenshots and logs are under `.tmp/world-playtests/`.
 
