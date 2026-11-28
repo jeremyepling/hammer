@@ -47,6 +47,7 @@ final class HammerMiningGameTests {
             HammerGameTests.registerStructureTest(tests, name, MINE, 100, h -> allFaces(h, mode));
         }
         HammerGameTests.registerStructureTest(tests, "hammer_ore_drops", MINE, 100, HammerMiningGameTests::oreDrops);
+        HammerGameTests.registerStructureTest(tests, "hammer_delayed_mining_face", MINE, 100, HammerMiningGameTests::delayedMiningFace);
         HammerGameTests.registerStructureTest(tests, "hammer_repeated_excavation", MINE, 100, HammerMiningGameTests::repeat);
         HammerGameTests.registerStructureTest(tests, "hammer_vein_limit_and_connectivity", MINE, 100, HammerMiningGameTests::vein);
         HammerGameTests.registerStructureTest(tests, "hammer_vein_material_pairs", MINE, 100, HammerMiningGameTests::veinMaterialPairs);
@@ -234,6 +235,53 @@ final class HammerMiningGameTests {
             h.assertTrue(silk ? count == 2 : count >= 2 && count <= 8, "Wrong total ore loot: " + count);
             boolean hasExperience = !h.getLevel().getEntitiesOfClass(ExperienceOrb.class, bounds).isEmpty();
             h.assertTrue(hasExperience == !silk, "Wrong experience outcome for " + (silk ? "Silk Touch" : "Fortune"));
+        }
+        h.succeed();
+    }
+
+    private static void delayedMiningFace(GameTestHelper h) {
+        var player = player(h, MiningShape.FLAT_3X3);
+        player.setGameMode(GameType.SURVIVAL);
+        player.setOnGround(true);
+        UpdateToolConfigPayload.applyToHeldItem(player, ToolConfig.DEFAULT.withMiningSpeed(MiningSpeed.STANDARD));
+
+        var wall = h.absolutePos(new BlockPos(8, 12, 8));
+        var floor = wall.offset(-3, -1, 0);
+        var wallMin = wall.offset(0, -2, -2);
+        var wallMax = wall.offset(1, 2, 2);
+        var floorMin = floor.offset(-2, -1, -2);
+        var floorMax = floor.offset(1, 0, 2);
+        fill(player, wallMin, wallMax, Blocks.STONE);
+        fill(player, floorMin, floorMax, Blocks.STONE);
+        Vec3 feet = Vec3.atBottomCenterOf(floor.above()).add(1, 0, 0);
+        player.setPos(feet);
+
+        var gameMode = player.gameMode;
+        // Start with an established server tick counter, as for a player already in the world.
+        for (int tick = 0; tick < 20; tick++) gameMode.tick();
+        int maxY = player.level().getMaxY();
+        gameMode.handleBlockBreakAction(wall, ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK, Direction.WEST, maxY, 0);
+        gameMode.handleBlockBreakAction(wall, ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK, Direction.WEST, maxY, 1);
+        check(h, wall, Blocks.STONE, "Early STOP should queue the wall break");
+        gameMode.handleBlockBreakAction(floor, ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK, Direction.UP, maxY, 2);
+        check(h, floor, Blocks.STONE, "The floor should still be in progress");
+
+        for (int tick = 0; tick < 20 && !h.getLevel().getBlockState(wall).isAir(); tick++) gameMode.tick();
+        for (var pos : BlockPos.betweenClosed(wallMin, wallMax)) {
+            boolean inCut = pos.getX() == wall.getX() && Math.abs(pos.getY() - wall.getY()) <= 1
+                    && Math.abs(pos.getZ() - wall.getZ()) <= 1;
+            check(h, pos, inCut ? Blocks.AIR : Blocks.STONE, "Delayed west-face cut");
+        }
+        for (var pos : BlockPos.betweenClosed(floorMin, floorMax)) {
+            check(h, pos, Blocks.STONE, "Finishing the wall must leave the floor intact");
+        }
+
+        for (int tick = 0; tick < 20; tick++) gameMode.tick();
+        gameMode.handleBlockBreakAction(floor, ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK, Direction.UP, maxY, 3);
+        for (var pos : BlockPos.betweenClosed(floorMin, floorMax)) {
+            boolean inCut = pos.getY() == floor.getY() && Math.abs(pos.getX() - floor.getX()) <= 1
+                    && Math.abs(pos.getZ() - floor.getZ()) <= 1;
+            check(h, pos, inCut ? Blocks.AIR : Blocks.STONE, "Active up-face cut");
         }
         h.succeed();
     }
