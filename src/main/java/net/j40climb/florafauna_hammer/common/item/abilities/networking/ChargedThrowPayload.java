@@ -22,38 +22,54 @@ public record ChargedThrowPayload(int action) implements CustomPacketPayload {
     public static final StreamCodec<ByteBuf, ChargedThrowPayload> STREAM_CODEC =
             StreamCodec.composite(ByteBufCodecs.VAR_INT, ChargedThrowPayload::action, ChargedThrowPayload::new);
 
-    public record Hold(ItemStack hammer, ResourceKey<Level> dimension, long start) {}
+    public record Hold(ItemStack hammer, InteractionHand hand, int slot, ResourceKey<Level> dimension, long start) {
+        boolean valid(ServerPlayer player) {
+            return player.isAlive() && !player.isSpectator() && dimension == player.level().dimension()
+                    && slot == player.getInventory().getSelectedSlot() && hammer == player.getItemInHand(hand)
+                    && hammer.has(HammerRegistry.THROWABLE_ABILITY.get());
+        }
+    }
 
     public static void handle(ChargedThrowPayload request, ServerPlayer player) {
         key(player, request.action);
     }
 
     public static void key(ServerPlayer player, int action) {
-        ItemStack stack = player.getMainHandItem();
-        var hold = HammerRegistry.throwHold(player);
-        long now = player.level().getGameTime();
         if (action == PRESS) {
-            if (hold == null && stack.is(HammerRegistry.HAMMER.get()) && stack.has(HammerRegistry.THROWABLE_ABILITY.get())
-                    && player.isAlive() && !player.isSpectator()) {
-                HammerRegistry.setThrowHold(player, new Hold(stack, player.level().dimension(), now));
-            }
-        } else {
+            begin(player, InteractionHand.MAIN_HAND);
+        } else if (action == CANCEL || action == RELEASE) {
+            var hold = HammerRegistry.throwHold(player);
             HammerRegistry.setThrowHold(player, null);
-            if (action == RELEASE && hold != null && hold.hammer == stack && hold.dimension == player.level().dimension() && player.isAlive() && !player.isSpectator()) {
-                boolean charged = HammerStage.of(stack) != HammerStage.FORGED && now - hold.start >= HOLD_TICKS;
-                ThrowItemPayload.throwItem(player, InteractionHand.MAIN_HAND, charged);
+            if (action == RELEASE && hold != null && hold.valid(player)) {
+                boolean charged = HammerStage.of(hold.hammer) != HammerStage.FORGED
+                        && player.level().getGameTime() - hold.start >= HOLD_TICKS;
+                ThrowItemPayload.throwItem(player, hold.hand, charged);
             }
+        }
+    }
+
+    public static void begin(ServerPlayer player, InteractionHand hand) {
+        var stack = player.getItemInHand(hand);
+        if (HammerRegistry.throwHold(player) == null && player.isAlive() && !player.isSpectator()
+                && stack.is(HammerRegistry.HAMMER.get()) && stack.has(HammerRegistry.THROWABLE_ABILITY.get())) {
+            HammerRegistry.setThrowHold(player, new Hold(stack, hand, player.getInventory().getSelectedSlot(),
+                    player.level().dimension(), player.level().getGameTime()));
         }
     }
 
     public static void tick(ServerPlayer player) {
         var hold = HammerRegistry.throwHold(player);
         if (hold == null) return;
-        if (hold.hammer != player.getMainHandItem() || hold.dimension != player.level().dimension() || !player.isAlive() || player.isSpectator()) {
+        if (!hold.valid(player)) {
             HammerRegistry.setThrowHold(player, null);
-        } else if (HammerStage.of(hold.hammer) != HammerStage.FORGED && player.level().getGameTime() - hold.start == HOLD_TICKS) {
+            return;
+        }
+        if (HammerStage.of(hold.hammer) == HammerStage.FORGED) return;
+        long age = player.level().getGameTime() - hold.start;
+        if (age > 0 && age % 4 == 0) HammerCorePayload.send(player, hold.hand, HammerCorePayload.Cue.CHARGE);
+        if (age == HOLD_TICKS) {
             player.sendOverlayMessage(Component.translatable("ability.hammer.ore_strike.ready"));
-            HammerCorePayload.send(player, InteractionHand.MAIN_HAND, HammerCorePayload.Cue.READY);
+            HammerCorePayload.send(player, hold.hand, HammerCorePayload.Cue.READY);
         }
     }
 

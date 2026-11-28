@@ -22,55 +22,93 @@ import com.mojang.blaze3d.platform.InputConstants;
 
 public class KeyInputEvents {
 
-    private static int throwKeyPlayerId = Integer.MIN_VALUE;
-    private static boolean holdingThrow;
+    private static Player throwPlayer;
+    private static net.minecraft.world.level.Level throwLevel;
+    private static InteractionHand throwHand;
     private static int throwSlot;
+    private static boolean dedicatedThrow;
+    private static boolean useThrow;
+    private static boolean waitForUseUp;
+    private static boolean waitForThrowUp;
 
-    private static void updateThrowKey(Minecraft mc, ItemStack held) {
-        Player player = mc.player;
-        if (throwKeyPlayerId != player.getId()) {
-            throwKeyPlayerId = player.getId();
-            holdingThrow = false;
+    /** The interaction callback has selected Throw after vanilla and tool interactions. */
+    public static void onUseThrow(Player player, InteractionHand hand) {
+        if (player != Minecraft.getInstance().player || waitForUseUp) return;
+        rememberThrow(player, hand);
+        useThrow = true;
+    }
+
+    public static boolean suppressRepeatedUse() {
+        return useThrow || waitForUseUp;
+    }
+
+    private static void rememberThrow(Player player, InteractionHand hand) {
+        if (throwHand == null) {
+            throwPlayer = player;
+            throwLevel = player.level();
+            throwSlot = player.getInventory().getSelectedSlot();
+            throwHand = hand;
         }
+    }
+
+    private static void clearThrow() {
+        throwPlayer = null;
+        throwLevel = null;
+        throwHand = null;
+        dedicatedThrow = false;
+        useThrow = false;
+    }
+
+    private static void updateThrowKey(Minecraft mc) {
+        var player = mc.player;
         var key = HammerKey.THROW_ITEM.mapping();
+        boolean useDown = mc.options.keyUse.isDown();
+        boolean keyDown = key.isDown();
+        if (!useDown) waitForUseUp = false;
+        if (!keyDown) waitForThrowUp = false;
         //? if <26.3 {
-        if (holdingThrow && (mc.screen != null || player.getInventory().getSelectedSlot() != throwSlot
+        boolean screenOpen = mc.screen != null;
         //?} else {
-        /*if (holdingThrow && (mc.gui.screen() != null || player.getInventory().getSelectedSlot() != throwSlot
+        /*boolean screenOpen = mc.gui.screen() != null;
         *///?}
-                || !held.is(HammerRegistry.HAMMER.get()))) {
-            ClientSetup.sendToServer(new ChargedThrowPayload(ChargedThrowPayload.CANCEL));
-            holdingThrow = false;
+        if (throwHand != null && (player != throwPlayer || player.level() != throwLevel || screenOpen || !player.isAlive() || player.isSpectator()
+                || player.getInventory().getSelectedSlot() != throwSlot
+                || !player.getItemInHand(throwHand).is(HammerRegistry.HAMMER.get()))) {
+            if (player != null && mc.getConnection() != null) sendThrowAction(ChargedThrowPayload.CANCEL);
+            waitForUseUp = useThrow && useDown;
+            waitForThrowUp = dedicatedThrow && keyDown;
+            clearThrow();
         }
         while (key.consumeClick()) {
+            if (player == null || screenOpen || waitForThrowUp || !player.isAlive() || player.isSpectator()) continue;
+            var held = player.getMainHandItem();
+            if (!held.has(HammerRegistry.THROWABLE_ABILITY.get())) continue;
             if (held.is(HammerRegistry.HAMMER.get())) {
-                //? if <26.3 {
-                if (mc.screen == null && !holdingThrow && held.has(HammerRegistry.THROWABLE_ABILITY.get())) {
-                //?} else {
-                /*if (mc.gui.screen() == null && !holdingThrow && held.has(HammerRegistry.THROWABLE_ABILITY.get())) {
-                *///?}
-                    holdingThrow = true;
-                    throwSlot = player.getInventory().getSelectedSlot();
-                    ClientSetup.sendToServer(new ChargedThrowPayload(ChargedThrowPayload.PRESS));
-                }
-            } else if (held.has(HammerRegistry.THROWABLE_ABILITY.get())) {
-                //? if <26.3 {
-                player.swing(InteractionHand.MAIN_HAND);
-                //?} else {
-                /*player.swing(InteractionHand.MAIN_HAND, held.getAttackAnimation(), false);
-                *///?}
+                rememberThrow(player, InteractionHand.MAIN_HAND);
+                if (!dedicatedThrow) sendThrowAction(ChargedThrowPayload.PRESS);
+                dedicatedThrow = true;
+            } else if (throwHand == null) {
+                swingThrow(player, InteractionHand.MAIN_HAND);
                 ClientSetup.sendToServer(new ThrowItemPayload(true));
             }
         }
-        if (holdingThrow && !key.isDown()) {
-            holdingThrow = false;
-            //? if <26.3 {
-            player.swing(InteractionHand.MAIN_HAND);
-            //?} else {
-            /*player.swing(InteractionHand.MAIN_HAND, held.getAttackAnimation(), false);
-            *///?}
-            ClientSetup.sendToServer(new ChargedThrowPayload(ChargedThrowPayload.RELEASE));
+        if (throwHand != null && !(useThrow && useDown) && !(dedicatedThrow && keyDown)) {
+            if (!useThrow) swingThrow(player, throwHand);
+            sendThrowAction(ChargedThrowPayload.RELEASE);
+            clearThrow();
         }
+    }
+
+    private static void sendThrowAction(int action) {
+        ClientSetup.sendToServer(new ChargedThrowPayload(action));
+    }
+
+    private static void swingThrow(Player player, InteractionHand hand) {
+        //? if <26.3 {
+        player.swing(hand);
+        //?} else {
+        /*player.swing(hand, player.getItemInHand(hand).getAttackAnimation(), false);
+        *///?}
     }
 
     private static final HammerControlGesture gesture = new HammerControlGesture();
@@ -199,6 +237,7 @@ public class KeyInputEvents {
     public static void onClientTick() {
         Minecraft mc = Minecraft.getInstance();
         updateControl(mc);
+        updateThrowKey(mc);
         Player player = mc.player;
         if (player == null)
             return;
@@ -218,6 +257,5 @@ public class KeyInputEvents {
                 ClientSetup.sendToServer(TeleportToSurfacePayload.INSTANCE);
             }
         }
-        updateThrowKey(mc, itemStack);
     }
 }

@@ -31,7 +31,7 @@ class PlatformRegistration {
     private static final DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, HammerMod.MOD_ID);
 
     public static final Supplier<AttachmentType<ChargedThrowPayload.Hold>> THROW_HOLD = ATTACHMENTS.register("throw_hold",
-            () -> AttachmentType.builder(() -> new ChargedThrowPayload.Hold(ItemStack.EMPTY, Level.OVERWORLD, 0)).build());
+            () -> AttachmentType.builder(() -> new ChargedThrowPayload.Hold(ItemStack.EMPTY, InteractionHand.MAIN_HAND, -1, Level.OVERWORLD, 0)).build());
     public static final Supplier<AttachmentType<GroundSlam.Pending>> PENDING_SLAM = ATTACHMENTS.register("pending_slam",
             () -> AttachmentType.builder(() -> new GroundSlam.Pending(ItemStack.EMPTY, InteractionHand.MAIN_HAND, Level.OVERWORLD, 0)).build());
 

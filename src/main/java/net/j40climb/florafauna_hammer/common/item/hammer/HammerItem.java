@@ -19,6 +19,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.server.level.ServerPlayer;
 import net.j40climb.florafauna_hammer.common.item.abilities.SeismicScanner;
+import net.j40climb.florafauna_hammer.common.item.abilities.RightClickActionHandler;
 import net.minecraft.world.item.Item;
 //? if <26.3 {
 import net.minecraft.world.item.ItemInstance;
@@ -48,6 +49,7 @@ import java.util.function.Consumer;
  * This hammer supports multiple mining modes and speed settings configurable via data components.
  */
 public class HammerItem extends Item {
+    private static final Identifier THROW_ABILITY = Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "throwable_ability");
     public static final int MAX_CHARGE = HammerStage.TEMPEST.capacity();
     /**
      * The tool material configuration for the Energy Hammer.
@@ -84,7 +86,7 @@ public class HammerItem extends Item {
                 .component(HammerRegistry.TELEPORT_SURFACE_ABILITY.get(), Unit.INSTANCE)
                 .component(HammerRegistry.HAMMER_STAGE.get(), HammerStage.FORGED)
                 .component(HammerRegistry.THROWABLE_ABILITY.get(), ThrowableAbilityData.DEFAULT)
-                .component(HammerRegistry.RIGHT_CLICK_ACTION.get(), new RightClickAction(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "throwable_ability")))
+                .component(HammerRegistry.RIGHT_CLICK_ACTION.get(), new RightClickAction(THROW_ABILITY))
                 .component(HammerRegistry.MULTI_TOOL_ABILITY.get(), MultiToolAbilityData.DEFAULT)
                 .component(HammerRegistry.HAMMER_ACTION.get(), HammerAction.AUTO)
                 .component(DataComponents.UNBREAKABLE, Unit.INSTANCE)
@@ -93,13 +95,21 @@ public class HammerItem extends Item {
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
-        if (context.getPlayer() == null || !context.getPlayer().onGround()
-                || context.getItemInHand().get(HammerRegistry.HAMMER_ACTION.get()) != HammerAction.SCAN
-                || !HammerAction.SCAN.availableOn(context.getItemInHand())) {
-            return super.useOn(context);
+        var player = context.getPlayer();
+        if (player == null || !player.onGround()) return super.useOn(context);
+        var stack = context.getItemInHand();
+        var selected = stack.getOrDefault(HammerRegistry.HAMMER_ACTION.get(), HammerAction.AUTO);
+        if (selected == HammerAction.SCAN && selected.availableOn(stack)) {
+            if (player instanceof ServerPlayer server) SeismicScanner.activate(server, context.getHand());
+            return InteractionResult.SUCCESS;
         }
-        if (context.getPlayer() instanceof ServerPlayer player) SeismicScanner.activate(player, context.getHand());
-        return InteractionResult.SUCCESS;
+        var fallback = stack.get(HammerRegistry.RIGHT_CLICK_ACTION.get());
+        if (selected == HammerAction.AUTO && fallback != null && fallback.abilityId().equals(THROW_ABILITY)
+                && stack.has(HammerRegistry.THROWABLE_ABILITY.get())) {
+            RightClickActionHandler.beginThrow(player, context.getHand());
+            return InteractionResult.SUCCESS;
+        }
+        return super.useOn(context);
     }
 
     /**

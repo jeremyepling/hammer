@@ -162,7 +162,7 @@ Enable **Auto torches** in the held Hammer’s **Settings** wheel (hold **C**). 
 
 The standard Hammer throw starts returning at 32 blocks from launch if it reaches that distance before hitting anything.
 
-Aim a Resonant or Tempest Hammer at exposed ore and hold the throw key until the ready message appears (20 server ticks), then release. On impact, the Hammer mines connected ore using its own Fortune or Silk Touch, vein matching and block limit. Each block it removes costs one charge. A missed throw, a non-ore impact from a charged throw, or a denied break costs nothing. Stock quick throws and held mining are free. Hammers configured to break blocks on ordinary impact also spend one charge per successful break.
+Aim a Resonant or Tempest Hammer at exposed ore. Hold **T**, or hold **Use** when the right-click action selects Throw. Release after the ready message (20 server ticks) for an ore strike. Releasing earlier throws normally. A Forged Hammer throws normally with either gesture. On impact, the Hammer mines connected ore using its own Fortune or Silk Touch, vein matching and block limit. Each block it removes costs one charge. A missed throw, a non-ore impact from a charged throw, or a denied break costs nothing. Stock quick throws and held mining are free. Hammers configured to break blocks on ordinary impact also spend one charge per successful break.
 
 Returning mining throws bring the block loot to your inventory and leave overflow at your feet. Mining experience stays at the impact site.
 

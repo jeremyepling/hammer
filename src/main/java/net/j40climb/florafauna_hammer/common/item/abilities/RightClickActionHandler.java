@@ -4,6 +4,8 @@ import net.j40climb.florafauna_hammer.HammerMod;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MultiToolAbilityData;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.RightClickAction;
+import net.j40climb.florafauna_hammer.client.KeyInputEvents;
+import net.j40climb.florafauna_hammer.common.item.abilities.networking.ChargedThrowPayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.CycleMiningModePayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.SpawnLightningPayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.TeleportToSurfacePayload;
@@ -89,6 +91,15 @@ public class RightClickActionHandler {
 
     //?}
 
+    public static void beginThrow(Player player, InteractionHand hand) {
+        if (player instanceof ServerPlayer server) {
+            if (player.getItemInHand(hand).is(HammerRegistry.HAMMER.get())) ChargedThrowPayload.begin(server, hand);
+            else ThrowItemPayload.throwItem(server, hand);
+        } else if (player.level().isClientSide() && player.getItemInHand(hand).is(HammerRegistry.HAMMER.get())) {
+            KeyInputEvents.onUseThrow(player, hand);
+        }
+    }
+
     static void forgetPlayer(Player player) {
         recentToolModifications.remove(player.getUUID());
     }
@@ -123,7 +134,7 @@ public class RightClickActionHandler {
             }
             case THROW -> {
                 if (!stack.has(HammerRegistry.THROWABLE_ABILITY.get())) return false;
-                if (serverPlayer != null) ThrowItemPayload.throwItem(serverPlayer, hand);
+                beginThrow(player, hand);
                 return true;
             }
             case LIGHTNING -> {
@@ -159,7 +170,7 @@ public class RightClickActionHandler {
             }
         }
 
-        if (selected != HammerAction.AUTO || serverPlayer == null) return false;
+        if (selected != HammerAction.AUTO) return false;
 
         // Check if we already did a tool modification this tick
         // (Handles case where RightClickItem fires after RightClickBlock did a tool modification)
@@ -176,6 +187,13 @@ public class RightClickActionHandler {
 
         if (!action.abilityId().getNamespace().equals(HammerMod.MOD_ID)) return false;
         String abilityName = action.abilityId().getPath();
+        if (abilityName.equals("throwable_ability") && stack.is(HammerRegistry.HAMMER.get())) {
+            // On blocks HammerItem.useOn runs this fallback after the block has had its turn.
+            if (clickedPos != null || !stack.has(HammerRegistry.THROWABLE_ABILITY.get())) return false;
+            beginThrow(player, hand);
+            return true;
+        }
+        if (serverPlayer == null) return false;
         switch (abilityName) {
             case "throwable_ability" -> {
                 if (!stack.has(HammerRegistry.THROWABLE_ABILITY.get())) return false;
