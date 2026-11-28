@@ -5,7 +5,7 @@ param(
     [Parameter(Mandatory)] [string]$SourceWorld,
     [ValidateSet('hammer','stair-outline','powers','radial','progression')][string]$Scenario = 'hammer',
     [switch]$Offline,
-    [ValidateSet('26.1','26.3')][string]$Target = '26.1',
+    [ValidateSet('26.1','26.1.1','26.1.2','26.3')][string]$Target = '26.1',
     [ValidateSet('neoforge','fabric')][string]$Loader = 'neoforge'
 )
 $ErrorActionPreference = 'Stop'
@@ -47,7 +47,7 @@ try {
             throw 'Source save changed during the copy.'
         }
         Set-Content -LiteralPath (Join-Path $gameDir '.florafauna-playtest') -Value $Scenario
-        $optionsVersion = if ($Target -eq '26.1') { 4786 } else { 5023 }
+        $optionsVersion = @{'26.1'=4786; '26.1.1'=4788; '26.1.2'=4790; '26.3'=5023}[$Target]
         $gameOptions = @("version:$optionsVersion",'pauseOnLostFocus:false','key_key.hammer.throw_item:key.keyboard.comma','skipMultiplayerWarning:true','onboardAccessibility:false','tutorialStep:none','autoJump:false','renderDistance:4','simulationDistance:5')
         if ($Scenario -eq 'radial') { $gameOptions += 'key_key.hammer.cycle_mining_mode:key.keyboard.v' }
         $gameOptions | Set-Content -LiteralPath (Join-Path $gameDir 'options.txt')

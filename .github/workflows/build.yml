@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: ['26.1-neoforge', '26.3-neoforge', '26.1-fabric', '26.3-fabric']
+        target: ['26.1-fabric', '26.1-neoforge', '26.1.1-fabric', '26.1.1-neoforge', '26.1.2-fabric', '26.1.2-neoforge', '26.3-fabric', '26.3-neoforge']
     runs-on: ubuntu-latest
     env:
       CI_GRADLE_JVMARGS: -Xms256m -Xmx4g -XX:MaxMetaspaceSize=1g

@@ -1,10 +1,10 @@
 # Hammer
 
-A standalone Fabric and NeoForge mod for Minecraft 26.1 and 26.3, built with Java 25. Install the Hammer jar for your Minecraft version and loader on the server and client. Fabric installations also need Fabric API. Find the Hammer in Tools & Utilities or use `/give @s hammer:hammer`. Hammer items, ability components and projectiles use the `hammer` namespace. Saves from older releases reference different IDs, so back up those worlds before updating. The split FloraFauna mod (0.0.2 or later) is optional.
+A standalone Fabric and NeoForge mod for Minecraft 26.1, 26.1.1, 26.1.2 and 26.3, built with Java 25. Install the Hammer jar for your Minecraft version and loader on the server and client. Fabric installations also need Fabric API. Find the Hammer in Tools & Utilities or use `/give @s hammer:hammer`. Hammer items, ability components and projectiles use the `hammer` namespace. Saves from older releases reference different IDs, so back up those worlds before updating. The split FloraFauna mod (0.0.2 or later) is optional.
 
 ## Build and test
 
-Stonecutter builds four targets from this checkout, with 26.1 NeoForge as the editable default. Gameplay and UI live in `src/main`. Loader entrypoints, event adapters, and loader-specific resources live in `src/fabric` and `src/neoforge`. ModDevGradle builds the NeoForge targets and Loom builds the Fabric targets. Stonecutter evaluates loader conditions such as `//? if neoforge {` and Minecraft version conditions such as `//? if <26.3 {` before Java compilation. For example, both loaders use the same mining-speed calculation, with a NeoForge break-speed event and a Fabric mixin calling it.
+Stonecutter builds eight targets from this checkout, with 26.1 NeoForge as the editable default. Gameplay and UI live in `src/main`. Loader entrypoints, event adapters, and loader-specific resources live in `src/fabric` and `src/neoforge`. ModDevGradle builds the NeoForge targets and Loom builds the Fabric targets. Stonecutter evaluates loader conditions such as `//? if neoforge {` and Minecraft version conditions such as `//? if <26.3 {` before Java compilation. For example, both loaders use the same mining-speed calculation, with a NeoForge break-speed event and a Fabric mixin calling it.
 
 ```sh
 ./gradlew :26.1-fabric:build :26.1-fabric:runGameTestServer
@@ -13,7 +13,7 @@ Stonecutter builds four targets from this checkout, with 26.1 NeoForge as the ed
 ./gradlew :26.3-neoforge:build :26.3-neoforge:runGameTestServer
 ```
 
-Use `gradlew.bat` on Windows. Pick the matching jar from `versions/<minecraft>-<loader>/build/libs/` for the Minecraft version you play. To run a single server test, pass `-PgameTestFilter=hammer:hammer_tunnel_gaps` to the version's GameTest task.
+For the 26.1 patches, substitute `26.1.1` or `26.1.2` in the target name. Each patch shares its version-specific Hammer source and resources with 26.1 and builds against its exact Minecraft and loader dependencies. Use `gradlew.bat` on Windows. Pick the matching jar from `versions/<minecraft>-<loader>/build/libs/` for the Minecraft version you play. To run a single server test, pass `-PgameTestFilter=hammer:hammer_tunnel_gaps` to the version's GameTest task.
 
 For client checks, run `./scripts/test_hammer.ps1 -Target 26.1 -SourceWorld <closed-save-directory>` in PowerShell 7. Add `-Loader fabric` to run against Fabric. Choose a save from the same Minecraft version. Both targets support the quarry and stair-outline scenarios. You can also select `-Scenario powers`, `radial`, or `progression`. Disposable saves, screenshots and logs are under `.tmp/world-playtests/`.
 

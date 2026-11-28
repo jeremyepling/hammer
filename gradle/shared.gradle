@@ -24,10 +24,12 @@ tasks.named('processResources') {
 }
 
 // Each target adds its own gameplay classes and assets to the shared sources.
-sourceSets.main.java.srcDir 'target/main/java'
-sourceSets.main.java.srcDir rootProject.file("versions/${minecraft_version}/target/main/java")
-sourceSets.main.resources.srcDir rootProject.file("versions/${minecraft_version}/target/main/resources")
-sourceSets.main.resources.srcDir 'target/main/resources'
+def sourceGame = findProperty('shared_target_version') ?: minecraft_version
+ext.loaderTarget = rootProject.file("versions/${sourceGame}-${loader}/target/main")
+sourceSets.main.java.srcDir new File(loaderTarget, 'java')
+sourceSets.main.java.srcDir rootProject.file("versions/${sourceGame}/target/main/java")
+sourceSets.main.resources.srcDir rootProject.file("versions/${sourceGame}/target/main/resources")
+sourceSets.main.resources.srcDir new File(loaderTarget, 'resources')
 sourceSets.create('playtest') {
     java.srcDir 'target/playtest/java'
     java.source(loaderPlaytest.java)

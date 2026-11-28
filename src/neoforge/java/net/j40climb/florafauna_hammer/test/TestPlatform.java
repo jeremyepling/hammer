@@ -26,7 +26,7 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import java.util.function.Consumer;
-//? if >=26.3 {
+//? if >=26.1.2 {
 /*import net.neoforged.neoforge.event.level.block.BreakBlockEvent;*/
 //?}
 
@@ -36,14 +36,14 @@ final class TestPlatform {
     }
 
     static Runnable vetoBreak(ServerPlayer player, Predicate<BlockPos> denied) {
-        //? if >=26.3 {
+        //? if >=26.1.2 {
         /*Consumer<BreakBlockEvent> veto = event -> {*/
         //?} else {
         Consumer<BlockEvent.BreakEvent> veto = event -> {
         //?}
             if (event.getPlayer() == player && denied.test(event.getPos())) event.setCanceled(true);
         };
-        //? if >=26.3 {
+        //? if >=26.1.2 {
         /*NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BreakBlockEvent.class, veto);*/
         //?} else {
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, BlockEvent.BreakEvent.class, veto);
