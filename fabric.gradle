@@ -34,7 +34,7 @@ loom {
             runDir 'run/gameTestServer'
             vmArg '-Dfabric-api.gametest'
             vmArg "-Dfabric-api.gametest.filter=${providers.gradleProperty('gameTestFilter').getOrElse('hammer:*')}"
-            vmArg "-Dfabric-api.gametest.report-file=${file('build/test-results/gametest.xml')}"
+            vmArg "-Dfabric-api.gametest.report-file=${file('run/gameTestServer/gametest.xml')}"
         }
         if (playtestId) {
             worldPlaytest {

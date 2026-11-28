@@ -30,7 +30,8 @@ neoForge {
             type = 'gameTestServer'
             gameDirectory = file('run/gameTestServer')
             systemProperty 'neoforge.enabledGameTestNamespaces', 'hammer'
-            programArguments.addAll '--tests', providers.gradleProperty('gameTestFilter').getOrElse('hammer:*')
+            programArguments.addAll '--tests', providers.gradleProperty('gameTestFilter').getOrElse('hammer:*'),
+                    '--report', 'gametest.xml'
         }
         if (playtestId) {
             worldPlaytest {

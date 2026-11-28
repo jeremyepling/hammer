@@ -19,6 +19,7 @@ jobs:
       matrix:
         target: ['26.1-neoforge', '26.3-neoforge', '26.1-fabric', '26.3-fabric']
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       CI_GRADLE_JVMARGS: -Xms256m -Xmx4g -XX:MaxMetaspaceSize=1g
     steps:
@@ -53,4 +54,16 @@ jobs:
         with:
           name: hammer-${{ matrix.target }}
           path: versions/${{ matrix.target }}/build/libs/*.jar
+          retention-days: 14
+
+      - name: Upload test diagnostics
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: hammer-tests-${{ matrix.target }}
+          path: |
+            versions/${{ matrix.target }}/build/test-results/test/*.xml
+            versions/${{ matrix.target }}/run/gameTestServer/gametest.xml
+            versions/${{ matrix.target }}/run/gameTestServer/logs/latest.log
+            versions/${{ matrix.target }}/run/gameTestServer/crash-reports/*.txt
           retention-days: 14
