@@ -18,9 +18,14 @@ abstract class HammerUseMixin {
     private boolean hammer$consumeUseClick(KeyMapping mapping, Operation<Boolean> original) {
         boolean clicked = original.call(mapping);
         var mc = (Minecraft) (Object) this;
-        if (mapping != mc.options.keyUse || !KeyInputEvents.canUseHammerBinding(mc.player)) return clicked;
+        if (mapping != mc.options.keyUse) return clicked;
         var alternate = HammerKey.USE_HAMMER.mapping();
-        return (!alternate.isUnbound() && alternate.consumeClick()) || clicked;
+        if (alternate.isUnbound()) return clicked;
+        if (!KeyInputEvents.canUseHammerBinding(mc.player)) {
+            while (alternate.consumeClick()) { }
+            return clicked;
+        }
+        return alternate.consumeClick() || clicked;
     }
 
     @WrapOperation(method = "handleKeybinds", at = @At(value = "INVOKE",

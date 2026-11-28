@@ -211,7 +211,5 @@ public class KeyInputEvents {
         Minecraft mc = Minecraft.getInstance();
         updateControl(mc);
         updateThrow(mc);
-        var hammerUse = HammerKey.USE_HAMMER.mapping();
-        while (hammerUse.consumeClick()) { } // Discard clicks when Minecraft is not handling gameplay input.
     }
 }
