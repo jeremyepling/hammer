@@ -7,7 +7,7 @@ ext.loader = 'fabric'
 apply from: rootProject.file('gradle/shared.gradle')
 
 repositories { maven { url = 'https://maven.fabricmc.net/' } }
-def fabricLoader = '0.19.5'
+def fabricLoader = findProperty('fabric_loader_version') ?: '0.19.5'
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${fabricLoader}"
