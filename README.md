@@ -1,6 +1,6 @@
 # Hammer
 
-Hammer supports Minecraft 26.1 and 26.3 on Fabric and NeoForge, plus Minecraft 26.4 Pre-Release 1 on Fabric. Build and run it with Java 25. Install the Hammer jar for your Minecraft version and loader on the server and client. Fabric installations also need Fabric API. Find the Hammer in Tools & Utilities or use `/give @s florafauna:hammer`. Existing Hammer items, ability components and projectiles keep their original identifiers. The split FloraFauna mod (0.0.2 or later) is optional.
+Hammer supports Minecraft 26.1 and 26.3 on Fabric and NeoForge, plus Minecraft 26.4 Pre-Release 2 on Fabric. Build and run it with Java 25. Install the Hammer jar for your Minecraft version and loader on the server and client. Fabric installations also need Fabric API. Find the Hammer in Tools & Utilities or use `/give @s florafauna:hammer`. Existing Hammer items, ability components and projectiles keep their original identifiers. The split FloraFauna mod (0.0.2 or later) is optional.
 
 ## Build and test
 
@@ -16,7 +16,7 @@ Stonecutter builds the four stable targets and the Fabric preview from this chec
 
 Use `gradlew.bat` on Windows. Pick the matching jar from `versions/<minecraft>-<loader>/build/libs/` for the Minecraft version you play. To run a single server test, pass `-PgameTestFilter=florafauna_hammer:hammer_tunnel_gaps` to the version's GameTest task.
 
-The `26.4-fabric` target pins Minecraft `26.4-pre-1`, Fabric Loader `0.20.1` and Fabric API `0.167.1+26.4`. Use `-Target 26.4 -Loader fabric` for client checks on a copy of a Pre-Release 1 save.
+The `26.4-fabric` target pins Minecraft `26.4-pre-2`, Fabric Loader `0.20.1` and Fabric API `0.167.1+26.4`. Use `-Target 26.4 -Loader fabric` for client checks on a copy of a Pre-Release 2 save.
 
 The experimental `26.4-neoforge` target requires a working NeoForge userdev artifact for Minecraft `26.4-snapshot-10`. Once a matching version is available on NeoForge Maven or in Maven Local, run `./gradlew -PpreviewNeoVersion=<version> :26.4-neoforge:build`. The upstream snapshot-10 port failed to compile at [e9012cb](https://github.com/neoforged/NeoForge/commit/e9012cb09aea9261144cdf41d62b5a63f1e5f5dd).
 
