@@ -10,8 +10,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public enum HammerKey {
-    SUMMON_LIGHTNING("key.hammer.summon_lightning", InputConstants.KEY_R),
-    TELEPORT_SURFACE("key.hammer.teleport_surface", InputConstants.KEY_M),
     USE_HAMMER("key.hammer.use_hammer", InputConstants.UNKNOWN.getValue()),
     CYCLE_MINING_MODE("key.hammer.cycle_mining_mode", InputConstants.KEY_C);
 

@@ -1,34 +1,17 @@
-package net.j40climb.florafauna_hammer.common.item.abilities.networking;
+package net.j40climb.florafauna_hammer.common.item.abilities;
 
-import io.netty.buffer.ByteBuf;
-import net.j40climb.florafauna_hammer.HammerMod;
-import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.DismountHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
-public enum TeleportToSurfacePayload implements CustomPacketPayload {
-    INSTANCE;
+final class SurfaceTeleport {
+    private SurfaceTeleport() {}
 
-    public static final Type<TeleportToSurfacePayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "teleport_to_surface_payload"));
-    public static final StreamCodec<ByteBuf, TeleportToSurfacePayload> STREAM_CODEC = StreamCodec.unit(INSTANCE);
-
-    public static void onServerReceived(final TeleportToSurfacePayload data, final ServerPlayer player) {
-        if (HammerAction.TELEPORT.availableOn(player.getMainHandItem())) {
-            teleportToSurface(player);
-        }
-    }
-
-    public static void teleportToSurface(Player player) {
+    static void teleportToSurface(ServerPlayer player) {
         Level level = player.level();
-        if (level.isClientSide()) return;
 
         BlockPos playerPos = player.blockPosition();
         BlockPos.MutableBlockPos scanPos = playerPos.mutable();
@@ -51,10 +34,5 @@ public enum TeleportToSurfacePayload implements CustomPacketPayload {
 
         // No surface found
         player.sendOverlayMessage(Component.translatable("ability.hammer.teleport_surface.no_surface"));
-    }
-
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
     }
 }

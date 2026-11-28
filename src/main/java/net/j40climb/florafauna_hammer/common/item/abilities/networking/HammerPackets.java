@@ -18,8 +18,6 @@ public final class HammerPackets {
     public static void register(Registrar registrar) {
         registrar.clientbound(HammerCorePayload.TYPE, HammerCorePayload.STREAM_CODEC);
         registrar.clientbound(SeismicScanPayload.TYPE, SeismicScanPayload.STREAM_CODEC);
-        registrar.serverbound("2", SpawnLightningPayload.TYPE, SpawnLightningPayload.STREAM_CODEC, SpawnLightningPayload::onServerReceived);
-        registrar.serverbound("2", TeleportToSurfacePayload.TYPE, TeleportToSurfacePayload.STREAM_CODEC, TeleportToSurfacePayload::onServerReceived);
         registrar.serverbound("3", UpdateToolConfigPayload.TYPE, UpdateToolConfigPayload.STREAM_CODEC, UpdateToolConfigPayload::onServerReceived);
         registrar.serverbound("2", ChargedThrowPayload.TYPE, ChargedThrowPayload.STREAM_CODEC, ChargedThrowPayload::handle);
         registrar.serverbound("2", ThrowItemPayload.TYPE, ThrowItemPayload.STREAM_CODEC, ThrowItemPayload::onServerReceived);

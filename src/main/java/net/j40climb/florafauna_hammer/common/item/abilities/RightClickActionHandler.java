@@ -7,8 +7,6 @@ import net.j40climb.florafauna_hammer.common.item.abilities.data.RightClickActio
 import net.j40climb.florafauna_hammer.client.KeyInputEvents;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.ChargedThrowPayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.CycleMiningModePayload;
-import net.j40climb.florafauna_hammer.common.item.abilities.networking.SpawnLightningPayload;
-import net.j40climb.florafauna_hammer.common.item.abilities.networking.TeleportToSurfacePayload;
 import net.j40climb.florafauna_hammer.common.item.abilities.networking.ThrowItemPayload;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
@@ -140,14 +138,14 @@ public class RightClickActionHandler {
             case LIGHTNING -> {
                 if (!selected.availableOn(stack)) return false;
                 if (serverPlayer != null) {
-                    BlockPos target = clickedPos != null ? clickedPos : SpawnLightningPayload.targetFromView(player);
-                    SpawnLightningPayload.spawnLightningBolt(serverPlayer, hand, target);
+                    BlockPos target = clickedPos != null ? clickedPos : HammerLightning.targetFromView(serverPlayer);
+                    HammerLightning.spawnLightningBolt(serverPlayer, hand, target);
                 }
                 return true;
             }
             case TELEPORT -> {
                 if (!selected.availableOn(stack)) return false;
-                if (serverPlayer != null) TeleportToSurfacePayload.teleportToSurface(serverPlayer);
+                if (serverPlayer != null) SurfaceTeleport.teleportToSurface(serverPlayer);
                 return true;
             }
         }
@@ -205,11 +203,11 @@ public class RightClickActionHandler {
             }
             case "lightning_ability" -> {
                 if (clickedPos == null || !HammerAction.LIGHTNING.availableOn(stack)) return false;
-                SpawnLightningPayload.spawnLightningBolt(serverPlayer, hand, clickedPos);
+                HammerLightning.spawnLightningBolt(serverPlayer, hand, clickedPos);
             }
             case "teleport_surface_ability" -> {
                 if (!HammerAction.TELEPORT.availableOn(stack)) return false;
-                TeleportToSurfacePayload.teleportToSurface(serverPlayer);
+                SurfaceTeleport.teleportToSurface(serverPlayer);
             }
             default -> {
                 return false; // Unknown ability, don't cancel the event

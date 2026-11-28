@@ -99,10 +99,8 @@ Each Hammer remembers its settings.
 | Tap **C** | Cycle mining shapes in their usual order. With favorites, cycle only the starred shapes. |
 | Double-tap **C** within 250 ms | Select Single Block. This keeps your favorites and stays selected until you change modes. |
 | Hold **C** for 300 ms | Open both Hammer wheels side by side. Keep **C** held while choosing. |
-| Right-click on the ground | Use the selected ability. |
-| Right-click off the ground | Attempt a Kinetic Ground Slam. |
-| **R** / **M** | Call lightning / teleport to the surface with the corresponding ability. |
-| **Use Hammer** (unassigned) | Optional second binding for the usual Use action while holding a Hammer. |
+| Minecraft **Use** (right-click by default) | Use the selected ability on the ground or attempt a Kinetic Ground Slam in the air. |
+| **Use Hammer** (unassigned) | Optional second binding for the same action while holding a Hammer. |
 
 While holding **C**, click a mining shape on the left and a grounded ability on the right, in either order. Each click sets that wheel immediately. Hover highlights a wedge. Release **C** to close the wheels and keep your choices. You can change just one wheel or close both without changing either. The right wheel’s center switches to **Settings** and back. Use **Tab** to reach either wheel, arrow keys to move around it, and **Enter** to select. Press **Esc** to close.
 
