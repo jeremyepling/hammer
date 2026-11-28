@@ -28,6 +28,7 @@ final class HammerProgressionGameTests {
     static void register(HammerGameTests.Registrar tests) {
         HammerGameTests.registerTest(tests, "hammer_progression_recipes", HammerProgressionGameTests::recipes);
         HammerGameTests.registerTest(tests, "hammer_progression_locks", HammerProgressionGameTests::locks);
+        HammerGameTests.registerTest(tests, "hammer_progression_charge_meter", HammerProgressionGameTests::chargeMeter);
         HammerGameTests.registerTest(tests, "hammer_progression_forged_throw", HammerProgressionGameTests::forgedThrow);
     }
 
@@ -93,6 +94,28 @@ final class HammerProgressionGameTests {
                 h.assertTrue(!GroundSlam.activate(p, HAND) && HammerRegistry.pendingSlam(p) == null
                         && HammerItem.charge(hammer) == expectedCapacity, "Locked slam activated or spent charge on " + stage);
             }
+        }
+        h.succeed();
+    }
+
+    private static void chargeMeter(GameTestHelper h) {
+        var forged = HammerStage.FORGED.createStack();
+        h.assertTrue(!forged.getItem().isBarVisible(forged) && forged.getItem().getBarWidth(forged) == 0,
+                "The Forged Hammer has no charge meter");
+        for (var stage : EnumSet.of(HammerStage.RESONANT, HammerStage.TEMPEST)) {
+            var hammer = stage.createStack();
+            var item = hammer.getItem();
+            h.assertTrue(item.isBarVisible(hammer) && item.getBarWidth(hammer) == 13,
+                    "A fully charged Hammer must show all 13 pixels");
+            hammer.set(HammerRegistry.HAMMER_CHARGE.get(), stage.capacity() / 2);
+            h.assertTrue(item.isBarVisible(hammer) && item.getBarWidth(hammer) == 7,
+                    "A half-charged Hammer must show a half-full meter");
+            hammer.set(HammerRegistry.HAMMER_CHARGE.get(), 1);
+            h.assertTrue(item.isBarVisible(hammer) && item.getBarWidth(hammer) == 1,
+                    "A Hammer with one charge must show at least one pixel");
+            hammer.set(HammerRegistry.HAMMER_CHARGE.get(), 0);
+            h.assertTrue(item.isBarVisible(hammer) && item.getBarWidth(hammer) == 0,
+                    "An empty powered Hammer must still show the empty meter");
         }
         h.succeed();
     }

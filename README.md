@@ -39,7 +39,7 @@ Craft one Hammer and fit its two cores in order. In the Smithing Table, leave th
 
 Hold **C** to inspect the stage and hover over a locked wedge to see which core it needs. Tap **C** to cycle available shapes or favorites. Double-tap **C** for Single Block at any stage.
 
-All three stages use the original Hammer model and textures. The Hammer name and Hold-C menu show its stage. Powered Hammers show their charge in the tooltip and on the item bar.
+All three stages use the original Hammer model and textures. The Hammer name and Hold-C menu show its stage. Resonant and Tempest Hammers show a purple charge bar on their hotbar and inventory icons, including at full charge. The tooltip shows the exact amount.
 
 ## Data Components
 

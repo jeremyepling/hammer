@@ -240,10 +240,11 @@ public class HammerItem extends Item {
         if (stack.getOrDefault(HammerRegistry.HAMMER_CHARGE.get(), -1) != charge) stack.set(HammerRegistry.HAMMER_CHARGE.get(), charge);
     }
 
-    @Override public boolean isBarVisible(ItemStack stack) { return charge(stack) < HammerStage.of(stack).capacity(); }
+    @Override public boolean isBarVisible(ItemStack stack) { return HammerStage.of(stack).capacity() > 0; }
     @Override public int getBarWidth(ItemStack stack) {
         int capacity = HammerStage.of(stack).capacity();
-        return capacity == 0 ? 0 : Math.round(13.0f * charge(stack) / capacity);
+        int remaining = charge(stack);
+        return remaining == 0 ? 0 : Math.max(1, Math.round(13.0f * remaining / capacity));
     }
     @Override public int getBarColor(ItemStack stack) { return 0xAC72ED; }
 
