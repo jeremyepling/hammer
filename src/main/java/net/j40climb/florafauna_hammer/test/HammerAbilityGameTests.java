@@ -367,7 +367,7 @@ final class HammerAbilityGameTests {
         hammer.set(DataComponents.CUSTOM_NAME, Component.literal("Quarry Throw Hammer"));
         hammer.set(HammerRegistry.HAMMER_ACTION.get(), HammerAction.THROW);
         hammer.set(HammerRegistry.HAMMER_CHARGE.get(), 16);
-        hammer.set(HammerRegistry.THROWABLE_ABILITY.get(), ThrowableAbilityData.DEFAULT.withBreakBlocks(true));
+        hammer.set(HammerRegistry.THROWABLE_ABILITY.get(), ThrowableAbilityData.DEFAULT.withBreakBlocks(true).withMaxRange(6));
         hammer.set(HammerRegistry.MULTI_BLOCK_MINING.get(), new MiningModeData(MiningShape.SHAPELESS, 1, 64, true));
         player.setItemInHand(InteractionHand.MAIN_HAND, hammer);
         UpdateToolConfigPayload.applyToHeldItem(player, new ToolConfig(false, true, MiningSpeed.STANDARD));
@@ -390,29 +390,40 @@ final class HammerAbilityGameTests {
             return protectedImpact;
         });
         try {
-            for (int tick = 0; tick < 4 && attempts.get() == 0; tick++) projectile.tick();
+            try {
+                for (int tick = 0; tick < 4 && attempts.get() == 0; tick++) projectile.tick();
+            } finally {
+                release.run();
+            }
             helper.assertTrue(attempts.get() == 1, "Expected exactly one break permission check at impact");
             helper.assertTrue(level.getBlockState(neighbor).is(Blocks.DIAMOND_ORE), "Ordinary throw mined the neighboring ore");
-            var drops = level.getEntitiesOfClass(ItemEntity.class, new AABB(target).inflate(2));
+            var flightArea = new AABB(target).minmax(player.getBoundingBox()).inflate(3);
+            helper.assertTrue(level.getEntitiesOfClass(ItemEntity.class, flightArea).isEmpty(),
+                    "Impact spawned a ground item before the Hammer returned");
             if (protectedImpact) {
-                helper.assertTrue(level.getBlockState(target).is(Blocks.DIAMOND_ORE) && drops.isEmpty(),
-                        "Protected impact must preserve the ore and produce no drops");
+                helper.assertTrue(level.getBlockState(target).is(Blocks.DIAMOND_ORE), "Protected impact must preserve the ore");
                 helper.assertTrue(projectile.isReturning(), "Hammer must begin returning from the protected block");
             } else {
-                helper.assertTrue(level.isEmptyBlock(target) && drops.size() == 1
-                                && ItemStack.matches(drops.getFirst().getItem(), new ItemStack(Items.DIAMOND_ORE)),
-                        "Allowed impact must drop one Silk Touch ore block");
+                helper.assertTrue(level.isEmptyBlock(target), "Allowed impact must remove the target ore");
                 helper.assertTrue(!projectile.isReturning(), "Hammer must continue flying after breaking the block");
+                expected.set(HammerRegistry.HAMMER_CHARGE.get(), 15);
             }
             var inFlight = level.getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == player);
             helper.assertTrue(inFlight.size() == 1 && inFlight.getFirst() == projectile
                             && ItemStack.matches(expected, projectile.getThrownItem())
-                            && inventory.countItem(expected.getItem()) == 0,
-                    "Impact must leave exactly one unchanged Hammer in the projectile");
+                            && inventory.countItem(expected.getItem()) == 0 && inventory.countItem(Items.DIAMOND_ORE) == 0,
+                    "Impact must leave the Hammer in flight with charge spent only on a removed block");
+            for (int tick = 0; tick < 20 && !projectile.isRemoved(); tick++) projectile.tick();
+            helper.assertTrue(projectile.isRemoved() && inventory.countItem(expected.getItem()) == 1
+                            && inventory.getNonEquipmentItems().stream().anyMatch(stack -> ItemStack.matches(expected, stack)),
+                    "Catch must return exactly one named Hammer with the expected charge and components");
+            helper.assertTrue(inventory.countItem(Items.DIAMOND_ORE) == (protectedImpact ? 0 : 1)
+                            && inventory.countItem(Items.DIAMOND) == 0
+                            && level.getEntitiesOfClass(ItemEntity.class, flightArea).isEmpty(),
+                    "Catch must deliver exactly the successful Silk Touch ore to inventory");
             helper.assertTrue(player.getMainHandItem() == selected && selected.getCount() == 5,
-                    "Impact changed the selected hotbar stack");
+                    "Impact or catch changed the selected hotbar stack");
         } finally {
-            release.run();
             projectile.discard();
         }
         helper.succeed();
