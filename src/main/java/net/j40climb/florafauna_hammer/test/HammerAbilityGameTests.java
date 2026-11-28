@@ -2,6 +2,7 @@ package net.j40climb.florafauna_hammer.test;
 
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
+import net.j40climb.florafauna_hammer.HammerMod;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.HammerAction;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningModeData;
 import net.j40climb.florafauna_hammer.common.item.abilities.data.MiningShape;
@@ -19,6 +20,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.util.ProblemReporter;
@@ -38,6 +40,7 @@ import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 final class HammerAbilityGameTests {
@@ -47,6 +50,9 @@ final class HammerAbilityGameTests {
         HammerGameTests.registerTest(tests, "hammer_block_action_dispatch", HammerAbilityGameTests::checkBlockActions);
         HammerGameTests.registerTest(tests, "hammer_throw_single_item_and_reload", HammerAbilityGameTests::checkThrow);
         HammerGameTests.registerTest(tests, "hammer_throw_straight_flight", HammerAbilityGameTests::straightFlight);
+        var mine = Identifier.fromNamespaceAndPath(HammerMod.MOD_ID, "test_hammer_mine");
+        HammerGameTests.registerStructureTest(tests, "hammer_throw_impact_protected", mine, 100, h -> checkThrowImpact(h, true));
+        HammerGameTests.registerStructureTest(tests, "hammer_throw_impact_silk_touch", mine, 100, h -> checkThrowImpact(h, false));
         HammerGameTests.registerTest(tests, "hammer_throw_rejected_or_inventory_full", HammerAbilityGameTests::checkThrowFailure);
         //? if neoforge {
         HammerGameTests.registerTest(tests, "hammer_throw_recovery_toss_veto", HammerAbilityGameTests::checkRecoveryTossVeto);
@@ -336,6 +342,73 @@ final class HammerAbilityGameTests {
                     "Hammer must reach the target, fly back, and be caught");
         } finally {
             level.setBlockAndUpdate(target, previousBlock);
+        }
+        helper.succeed();
+    }
+
+    private static void checkThrowImpact(GameTestHelper helper, boolean protectedImpact) {
+        var player = player(helper);
+        var level = helper.getLevel();
+        var launch = helper.absolutePos(new BlockPos(8, 10, 4));
+        player.setPos(Vec3.atCenterOf(launch));
+        player.setYRot(0);
+        player.setXRot(0);
+        var target = BlockPos.containing(player.getEyePosition()).south(4);
+        var neighbor = target.east();
+        level.setBlockAndUpdate(target, Blocks.DIAMOND_ORE.defaultBlockState());
+        level.setBlockAndUpdate(neighbor, Blocks.DIAMOND_ORE.defaultBlockState());
+
+        var hammer = HammerStage.RESONANT.createStack();
+        hammer.set(DataComponents.CUSTOM_NAME, Component.literal("Quarry Throw Hammer"));
+        hammer.set(HammerRegistry.HAMMER_ACTION.get(), HammerAction.THROW);
+        hammer.set(HammerRegistry.HAMMER_CHARGE.get(), 16);
+        hammer.set(HammerRegistry.THROWABLE_ABILITY.get(), ThrowableAbilityData.DEFAULT.withBreakBlocks(true));
+        hammer.set(HammerRegistry.MULTI_BLOCK_MINING.get(), new MiningModeData(MiningShape.SHAPELESS, 1, 64, true));
+        player.setItemInHand(InteractionHand.MAIN_HAND, hammer);
+        UpdateToolConfigPayload.applyToHeldItem(player, new ToolConfig(false, true, MiningSpeed.STANDARD));
+        var expected = hammer.copy();
+        helper.assertTrue(TestPlatform.clickAir(player, InteractionHand.MAIN_HAND), "Throw action was not accepted");
+        var projectiles = level.getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == player);
+        helper.assertTrue(projectiles.size() == 1 && player.getMainHandItem().isEmpty(), "Expected one Hammer in flight");
+        var projectile = projectiles.getFirst();
+
+        var selected = new ItemStack(Items.STICK, 5);
+        player.setItemInHand(InteractionHand.MAIN_HAND, selected);
+        var inventory = player.getInventory();
+        int selectedSlot = inventory.getSelectedSlot();
+        var attempts = new AtomicInteger();
+        Runnable release = TestPlatform.vetoBreak(player, pos -> {
+            attempts.incrementAndGet();
+            helper.assertTrue(pos.equals(target), "Throw attempted to break a block outside the impact");
+            helper.assertTrue(ItemStack.matches(expected, player.getMainHandItem()), "Break hook saw the wrong tool");
+            helper.assertTrue(inventory.getItem(selectedSlot) == selected, "Break hook saw a replaced hotbar slot");
+            return protectedImpact;
+        });
+        try {
+            for (int tick = 0; tick < 4 && attempts.get() == 0; tick++) projectile.tick();
+            helper.assertTrue(attempts.get() == 1, "Expected exactly one break permission check at impact");
+            helper.assertTrue(level.getBlockState(neighbor).is(Blocks.DIAMOND_ORE), "Ordinary throw mined the neighboring ore");
+            var drops = level.getEntitiesOfClass(ItemEntity.class, new AABB(target).inflate(2));
+            if (protectedImpact) {
+                helper.assertTrue(level.getBlockState(target).is(Blocks.DIAMOND_ORE) && drops.isEmpty(),
+                        "Protected impact must preserve the ore and produce no drops");
+                helper.assertTrue(projectile.isReturning(), "Hammer must begin returning from the protected block");
+            } else {
+                helper.assertTrue(level.isEmptyBlock(target) && drops.size() == 1
+                                && ItemStack.matches(drops.getFirst().getItem(), new ItemStack(Items.DIAMOND_ORE)),
+                        "Allowed impact must drop one Silk Touch ore block");
+                helper.assertTrue(!projectile.isReturning(), "Hammer must continue flying after breaking the block");
+            }
+            var inFlight = level.getEntities(HammerRegistry.THROWN_ITEM.get(), e -> e.getOwner() == player);
+            helper.assertTrue(inFlight.size() == 1 && inFlight.getFirst() == projectile
+                            && ItemStack.matches(expected, projectile.getThrownItem())
+                            && inventory.countItem(expected.getItem()) == 0,
+                    "Impact must leave exactly one unchanged Hammer in the projectile");
+            helper.assertTrue(player.getMainHandItem() == selected && selected.getCount() == 5,
+                    "Impact changed the selected hotbar stack");
+        } finally {
+            release.run();
+            projectile.discard();
         }
         helper.succeed();
     }
