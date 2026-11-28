@@ -260,6 +260,10 @@ public class ThrownItemEntity extends AbstractArrow {
         if (breakBlocks && level() instanceof ServerLevel level && getOwner() instanceof ServerPlayer owner) {
             ItemStack tool = getPickupItem();
             boolean brokeBlock = RemoteOreStrike.breakThrownBlock(level, owner, tool, result.getBlockPos());
+            if (tool.isEmpty()) {
+                discard();
+                return;
+            }
             setPickupItemStack(tool);
             if (brokeBlock) return;
         }
