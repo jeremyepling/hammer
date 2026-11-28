@@ -256,9 +256,19 @@ final class HammerMiningGameTests {
         Vec3 feet = Vec3.atBottomCenterOf(floor.above()).add(1, 0, 0);
         player.setPos(feet);
 
+        var level = h.getLevel();
+        h.assertTrue(player.isWithinBlockInteractionRange(wall, 1.0) && player.isWithinBlockInteractionRange(floor, 1.0),
+                "Both starting blocks must be within interaction range");
+        float wallProgress = level.getBlockState(wall).getDestroyProgress(player, level, wall);
+        float floorProgress = level.getBlockState(floor).getDestroyProgress(player, level, floor);
+        h.assertTrue(wallProgress > 0 && wallProgress < 0.7F && floorProgress > 0 && floorProgress < 0.7F,
+                "Fixture must allow an early STOP: wall " + wallProgress + ", floor " + floorProgress + " progress per tick");
+        int miningTicks = (int) Math.ceil(1.0 / Math.min(wallProgress, floorProgress)) + 1;
+        h.assertTrue(miningTicks <= 250, "Fixture mining should finish within 250 game mode ticks, got " + miningTicks);
+
         var gameMode = player.gameMode;
-        // Start with an established server tick counter, as for a player already in the world.
-        for (int tick = 0; tick < 20; tick++) gameMode.tick();
+        // Minecraft 26.3 uses the delayed break's start tick to calculate its progress.
+        for (int tick = 0; tick < miningTicks; tick++) gameMode.tick();
         int maxY = player.level().getMaxY();
         gameMode.handleBlockBreakAction(wall, ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK, Direction.WEST, maxY, 0);
         gameMode.handleBlockBreakAction(wall, ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK, Direction.WEST, maxY, 1);
@@ -266,7 +276,8 @@ final class HammerMiningGameTests {
         gameMode.handleBlockBreakAction(floor, ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK, Direction.UP, maxY, 2);
         check(h, floor, Blocks.STONE, "The floor should still be in progress");
 
-        for (int tick = 0; tick < 20 && !h.getLevel().getBlockState(wall).isAir(); tick++) gameMode.tick();
+        for (int tick = 0; tick < miningTicks && !level.getBlockState(wall).isAir(); tick++) gameMode.tick();
+        check(h, wall, Blocks.AIR, "Server tick should finish the delayed center (progress per tick " + wallProgress + ")");
         for (var pos : BlockPos.betweenClosed(wallMin, wallMax)) {
             boolean inCut = pos.getX() == wall.getX() && Math.abs(pos.getY() - wall.getY()) <= 1
                     && Math.abs(pos.getZ() - wall.getZ()) <= 1;
@@ -276,8 +287,9 @@ final class HammerMiningGameTests {
             check(h, pos, Blocks.STONE, "Finishing the wall must leave the floor intact");
         }
 
-        for (int tick = 0; tick < 20; tick++) gameMode.tick();
+        for (int tick = 0; tick < miningTicks; tick++) gameMode.tick();
         gameMode.handleBlockBreakAction(floor, ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK, Direction.UP, maxY, 3);
+        check(h, floor, Blocks.AIR, "Final STOP should finish the active center (progress per tick " + floorProgress + ")");
         for (var pos : BlockPos.betweenClosed(floorMin, floorMax)) {
             boolean inCut = pos.getY() == floor.getY() && Math.abs(pos.getX() - floor.getX()) <= 1
                     && Math.abs(pos.getZ() - floor.getZ()) <= 1;
