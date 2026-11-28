@@ -11,10 +11,14 @@ import net.j40climb.florafauna_hammer.common.item.hammer.HammerStage;
 import net.j40climb.florafauna_hammer.setup.HammerRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
+import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
+import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 //? if >=26.3 {
 /*import net.minecraft.world.entity.EntityTypes;*/
@@ -92,8 +96,10 @@ final class HammerPowerGameTests {
     private static void surfaceTeleportAvoidsHazards(GameTestHelper h) {
         var level = h.getLevel();
         var origin = h.absolutePos(FLOOR.above());
-        var player = scanner(h, origin).player;
+        var cues = new TeleportCues();
+        var player = TestPlatform.scanPlayer(h, cues);
         try {
+            player.setOnGround(true);
             player.setItemInHand(HAND, HammerStage.TEMPEST.createStack());
             player.getMainHandItem().set(HammerRegistry.HAMMER_ACTION.get(), HammerAction.TELEPORT);
             var hazards = List.of(Blocks.LAVA.defaultBlockState(),
@@ -106,17 +112,52 @@ final class HammerPowerGameTests {
                 HammerMiningGameTests.fill(player, origin.above(2),
                         new BlockPos(origin.getX(), level.getMaxY(), origin.getZ()), Blocks.AIR);
                 level.setBlockAndUpdate(hazardPos, hazard);
+                cues.received.clear();
                 h.assertTrue(clickAir(player) && player.position().equals(start),
                         "Surface Teleport moved the player when the only candidate was " + hazard);
+                h.assertTrue(cues.received.isEmpty(), "Rejected Surface Teleport emitted feedback: " + cues.received);
 
                 level.setBlockAndUpdate(safeSupport, Blocks.STONE.defaultBlockState());
                 h.assertTrue(clickAir(player) && player.blockPosition().equals(safeSupport.above()),
                         "Surface Teleport did not skip " + hazard + " and reach the stone above it");
+                var arrival = player.position();
+                h.assertTrue(cues.received.size() == 4, "Expected two sounds and two bursts: " + cues.received);
+                cues.assertAt(h, SoundEvents.ENDERMAN_TELEPORT, start);
+                cues.assertAt(h, ParticleTypes.PORTAL, start);
+                cues.assertAt(h, SoundEvents.CHORUS_FRUIT_TELEPORT, arrival);
+                cues.assertAt(h, ParticleTypes.REVERSE_PORTAL, arrival);
             }
         } finally {
             level.getServer().getPlayerList().remove(player);
         }
         h.succeed();
+    }
+
+    private record TeleportCue(Object effect, Vec3 position) {}
+
+    private static final class TeleportCues extends ChannelOutboundHandlerAdapter {
+        private final List<TeleportCue> received = new ArrayList<>();
+
+        @Override public void write(ChannelHandlerContext ctx, Object message, ChannelPromise promise) throws Exception {
+            if (message instanceof ClientboundSoundPacket sound) {
+                received.add(new TeleportCue(sound.getSound().value(), new Vec3(sound.getX(), sound.getY(), sound.getZ())));
+            } else if (message instanceof ClientboundLevelParticlesPacket particles) {
+                //? if >=26.3 {
+                /*if (particles.count() > 0) received.add(new TeleportCue(particles.particle(), new Vec3(particles.x(), particles.y(), particles.z())));*/
+                //?} else {
+                if (particles.getCount() > 0) received.add(new TeleportCue(particles.getParticle(),
+                        new Vec3(particles.getX(), particles.getY(), particles.getZ())));
+                //?}
+            }
+            super.write(ctx, message, promise);
+        }
+
+        private void assertAt(GameTestHelper h, Object effect, Vec3 feet) {
+            h.assertTrue(received.stream().anyMatch(cue -> cue.effect().equals(effect)
+                            && Math.abs(cue.position().x - feet.x) <= 0.125 && Math.abs(cue.position().z - feet.z) <= 0.125
+                            && cue.position().y >= feet.y - 0.125 && cue.position().y <= feet.y + 1.5),
+                    "Missing " + effect + " near " + feet + " in " + received);
+        }
     }
 
     private static void slamImpact(GameTestHelper h) {
